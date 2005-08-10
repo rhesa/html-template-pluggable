@@ -234,18 +234,18 @@ sub _param_to_tmpl {
 									$m =~ s/^["'`]//; $m =~ s/["'`]$//;
 									push @args, $m;
 								}
-								elsif( $data =~ s/						# a sub expression ($1)
+								elsif( $data =~ s/
 									^\s*
 									(
-										([_a-z]\w+)						# object or hash name ($2)
+										([_a-z]\w+)
 										\.
-										[_a-z]\w+						# method or key name
+										[_a-z]\w+
 										(?:
-											$RE{balanced}				# argument list
+											$RE{balanced}
 											|
-											[_a-z]\w+					# or chaining
+											[_a-z]\w+
 											|
-											\.							# TODO: this allows a.b.... 
+											\.
 										)*
 									)
 									(?:,\s*)?
@@ -268,7 +268,7 @@ sub _param_to_tmpl {
 									}
 								}
 								else {
-									# local $,= ', ';
+									local $,= ', ';
 									# carp("Parsing is in some weird state. args so far are '@args'. data = '$data'. id='$id'");
 									last;
 								}

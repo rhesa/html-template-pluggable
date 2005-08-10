@@ -28,7 +28,7 @@ $t->param('should_be',$mock);
 
 $output =  $t->output;
 
-like($output ,qr/Literals tokens with dots work/,'backwards compatibility');
+like($output ,qr/Literals tokens with dots work/);
 like($output ,qr/nested hashrefs work/);
 like($output ,qr/chained methods work/);
 like($output ,qr/chained methods work.*chained methods work/, "using a dot var more than once works" );
