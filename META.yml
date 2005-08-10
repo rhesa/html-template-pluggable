@@ -14,7 +14,7 @@ requires:
 provides:
   HTML::Template::Pluggable:
     file: lib/HTML/Template/Pluggable.pm
-    version: 0.10
+    version: 0.01
   HTML::Template::Plugin::Dot:
     file: lib/HTML/Template/Plugin/Dot.pm
     version: 0.90
