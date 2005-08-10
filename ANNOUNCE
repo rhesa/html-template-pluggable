@@ -1,0 +1,65 @@
+ANNOUNCEMENT: HTML::Template 2.7
+
+HTML::Template - a Perl module to use HTML Templates
+
+CHANGES
+
+   - New Feature: Added javascript escaping with ESCAPE=JS. (Craig Manley)
+
+   - Bug Fix: Improved cache keying to be sensitive to options which
+              alter the compilation of templates (path, search_path,
+              loop_context_vars and global_vars).  Calls to new() with
+              different settings for any of these options will no longer pull
+              incorrect cached objects.
+
+   - Bug Fix: Added code to detect broken Perl 5.8.0 installs
+              during installation (i.e. Redhat 8 and 9).
+
+   - Bug Fix: Fixed parsing of ESCAPE='URL' (Paul Baker)
+
+   - Bug Fix: Added check for empty filename passed to new().
+
+   - Test Fix: Migrated tests to Test::More.  This will allow the
+               easier introduction of new tests and the use of
+               Devel::Cover. (Gabor Szabo)
+
+DESCRIPTION
+
+    This module attempts to make using HTML templates simple and natural. It
+    extends standard HTML with a few new HTML-esque tags - <TMPL_VAR>,
+    <TMPL_LOOP>, <TMPL_INCLUDE>, <TMPL_IF>, <TMPL_ELSE> and <TMPL_UNLESS>.
+    The file written with HTML and these new tags is called a template. It
+    is usually saved separate from your script - possibly even created by
+    someone else! Using this module you fill in the values for the
+    variables, loops and branches declared in the template. This allows you
+    to separate design - the HTML - from the data, which you generate in the
+    Perl script.
+
+    This module is licensed under the GPL. See the LICENSE section below for
+    more details.
+
+TUTORIAL
+
+    If you're new to HTML::Template, I suggest you start with the
+    introductory article available on the HTML::Template website:
+
+       http://html-template.sourceforge.net
+
+AVAILABILITY
+
+    This module is available on SourceForge.  Download it at:
+
+       http://html-template.sourceforge.net
+
+    The module is also available on CPAN.  You can get it using
+    CPAN.pm or go to:
+
+       http://www.cpan.org/authors/id/S/SA/SAMTREGAR/
+
+CONTACT INFO
+
+    This module was written by Sam Tregar (sam@tregar.com). You can
+    join the HTML::Template mailing-list by visiting:
+
+      http://lists.sourceforge.net/lists/listinfo/html-template-users
+
