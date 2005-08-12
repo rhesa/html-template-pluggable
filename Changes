@@ -1,5 +1,11 @@
 Revision history for HTML-Template-Pluggable
 
-0.01    Date/time
-        First version, released on an unsuspecting world.
+0.03	Fri Aug 12 16:16:29 CEST 2005  Rhesa Rozendaal <rhesa@cpan.org>
+		Added more docs to ::Dot, and more tests
+		
+0.02	Thu Aug 11 01:09:21 CEST 2005  Mark Stosberg <mark@summersault.com>
+		* minor doc formatting tweaks
+  
+0.01    Wed Aug 10 16:21:03 CEST 2005  Rhesa Rozendaal <rhesa@cpan.org>
+        Initial release on CPAN
 

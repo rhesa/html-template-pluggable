@@ -1,6 +1,6 @@
 package HTML::Template::Plugin::Dot;
 use vars qw/$VERSION/;
-$VERSION = '0.90';
+$VERSION = '0.91';
 use strict;
 
 =head1 NAME
@@ -23,9 +23,8 @@ For example, in your code:
 
 And then in your template you can reference specific values in the structure:
 
-    my_complex_struct.key.obj.accessor('hash')
-    my_complex_struct.other_key
-
+  my_complex_struct.key.obj.accessor('hash')
+  my_complex_struct.other_key
 
 =head1 DESCRIPTION
 
@@ -33,7 +32,10 @@ By adding support for this dot notation to HTML::Template, the programmers job
 of sending data to the template is easier, and designers have easier access to
 more data to display in the template, without learning any more tag syntax. 
 
-=head1 EXAMPLES
+The dot notation is supported on the following tags: C<< <TMPL_VAR> >>,
+C<< <TMPL_IF> >> and C<< <TMPL_UNLESS> >>. 
+
+=head2 EXAMPLES
 
 =head2 Class::DBI integration
 
@@ -42,27 +44,69 @@ called in the template, that data doesn't have to be loaded.
 
 In the code:
 
- $t->param ( my_row => $class_dbi_obj );
+  $t->param ( my_row => $class_dbi_obj );
 
 In the template:
 
   my_row.last_name
 
-  my_date.mdy('/')
-  my_date.strftime('%D')
+This extends to related objects or inflated columns (commonly used for date
+fields). Here's an example with a date column that's inflated into a DateTime
+object:
+
+  my_row.my_date.mdy('/')
+  my_row.my_date.strftime('%D')
 
 Of course, if date formatting strings look scary to the designer, you can keep
 them in the application, or even a database layer to insure consistency in all
 presentations.
 
+Here's an example with related objects. Suppose you have a Customer object, that
+has_a BillingAddress object attached to it. Then you could say something like
+this:
+
+  <tmpl_if customer.billing_address>
+    <tmpl_var customer.billing_address.street>
+    <tmpl_var customer.billing_address.city>
+    ...
+  </tmpl_if>
+
+=head2 More complex uses
+
+The dot notation allows you to pass arguments to method calls (as in the 
+C<my_date.dmy('/')> example above). In fact, you can pass other objects in the 
+template as well, and this enables more complex usage.
+Imagine we had a (fictional) Formatter object which could perform some basic
+string formatting functions. This could be used in e.g. currencies, or dates.
+
+In your code:
+
+  $t->param( Formatter => Formatter->new,
+             order	   => $order_obj     );
+
+In your template:
+
+  Amount: <tmpl_var Formatter.format_currency('US',order.total_amount)>
+
 =head2 LIMITATIONS
 
-TMPL_VARs inside of loops won't work unless a simple patch is applied
+=over 4
+
+=item * TMPL_VARs inside of loops won't work unless a simple patch is applied
 to HTML::Template. We hope it will be updated with this patch soon.
 
 http://rt.cpan.org/NoAuth/Bug.html?id=14037
 
 Alternately, you can apply the patch to your own copy.  
+
+=item * TMPL_LOOPs are not (yet) supported. You still need to pass an array
+of hashrefs yourself.
+
+=item * Casing of hash keys follows the option C<case_sensitive> of
+L<HTML::Template>. If you do not use that option, all parameter names are 
+converted to lower case.
+
+=back
 
 =cut
 
@@ -318,13 +362,13 @@ http://mark.stosberg.com/darcs_hive/ht-dot/
 
 =head1 AUTHORS
 
-Mark Stosberg, c<< <mark@summersault.com> >>
-Rhesa Rozendaal, c<< <rhesa@cpan.org> >>
+Mark Stosberg, E<lt>mark@summersault.comE<gt>;
+Rhesa Rozendaal, E<lt>rhesa@cpan.orgE<gt>
 
 =head1 Copyright & License
 
-Parts copyright 2005 Mark Stosberg
-Parts copyright 2005 Rhesa Rozendaal
+ Parts copyright 2005 Mark Stosberg
+ Parts copyright 2005 Rhesa Rozendaal
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as perl itself.
