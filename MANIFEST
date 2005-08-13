@@ -13,4 +13,5 @@ t/dot_loop.t
 t/dot_notation.t
 t/dot_notation_methods_with_args.t
 t/dot_notation_mixnmatch.t
+t/dot_notation_recursive.t
 t/param_to_tmpl_unit.t

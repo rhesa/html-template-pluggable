@@ -1,5 +1,9 @@
 Revision history for HTML-Template-Pluggable
 
+0.04	Sat Aug 13 03:09:54 CEST 2005  Rhesa Rozendaal <rhesa@cpan.org>
+		Thanks to Michael Graham, it's now possible to reference scalar
+		tmpl_vars in argument lists
+
 0.03	Fri Aug 12 16:16:29 CEST 2005  Rhesa Rozendaal <rhesa@cpan.org>
 		Added more docs to ::Dot, and more tests
 		

@@ -22,8 +22,8 @@ my @passing = (
 
 # this list should fail
 my @failing = (
-[ q/should_be.some.method('quotes', and, bare, args)/,					q/not allowed in argument list/,		],
-[ q/should_be.some.method(arrays_are_not_possible[1,2,3])/,				q/not allowed in argument list/,		],
+[ q/should_be.some.method('quotes', and, bare, args)/,					q/Attempt to reference nonexisting parameter/,		],
+[ q/should_be.some.method(arrays_are_not_possible[1,2,3])/,				q/Attempt to reference nonexisting parameter/,		],
 [ q/should_be.some.method$$$/,											q/Trailing characters/,					],
 [ q/should_be(object.method)/,											q/Attempt to set nonexistent parameter/,],
 );

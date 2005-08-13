@@ -1,6 +1,6 @@
 package HTML::Template::Plugin::Dot;
 use vars qw/$VERSION/;
-$VERSION = '0.91';
+$VERSION = '0.92';
 use strict;
 
 =head1 NAME
@@ -280,16 +280,12 @@ sub _param_to_tmpl {
 								}
 								elsif( $data =~ s/
 									^\s*
-									(
-										([_a-z]\w+)
-										\.
-										[_a-z]\w+
+									(									# ($1) a sub-expression of the form "object.method(args)"
+										([_a-z]\w+)						# ($2) the object in question
 										(?:
-											$RE{balanced}
-											|
-											[_a-z]\w+
-											|
 											\.
+											[_a-z]\w+					# method name
+											$RE{balanced}?				# optional argument list
 										)*
 									)
 									(?:,\s*)?
@@ -308,12 +304,13 @@ sub _param_to_tmpl {
 										push @args, $prev;
 									}
 									else {
-										croak("Can't resolve '$m': '$o' not available. Remember to set nested objects before the ones that call them!");
+										# croak("Can't resolve '$m': '$o' not available. Remember to set nested objects before the ones that call them!");
+										croak("Attempt to reference nonexisting parameter '$m' in argument list to '$id' in dot expression '$toke_name': $m is not a TMPL_VAR!");
 									}
 								}
 								else {
 									local $,= ', ';
-									# carp("Parsing is in some weird state. args so far are '@args'. data = '$data'. id='$id'");
+									carp("Parsing is in some weird state. args so far are '@args'. data = '$data'. id='$id'");
 									last;
 								}
 							}
