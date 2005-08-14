@@ -1,15 +1,19 @@
 Revision history for HTML-Template-Pluggable
 
-0.04	Sat Aug 13 03:09:54 CEST 2005  Rhesa Rozendaal <rhesa@cpan.org>
-		Thanks to Michael Graham, it's now possible to reference scalar
-		tmpl_vars in argument lists
+0.05    Sun Aug 14 23:36:55 CEST 2005  Rhesa Rozendaal <rhesa@cpan.org>
+        Added tests against side effects (where avoidable). Extended the docs
+        for ::Dot
 
-0.03	Fri Aug 12 16:16:29 CEST 2005  Rhesa Rozendaal <rhesa@cpan.org>
-		Added more docs to ::Dot, and more tests
-		
-0.02	Thu Aug 11 01:09:21 CEST 2005  Mark Stosberg <mark@summersault.com>
-		* minor doc formatting tweaks
-  
+0.04    Sat Aug 13 03:09:54 CEST 2005  Rhesa Rozendaal <rhesa@cpan.org>
+        Thanks to Michael Graham, it's now possible to reference plain old 
+        tmpl_vars in argument lists
+
+0.03    Fri Aug 12 16:16:29 CEST 2005  Rhesa Rozendaal <rhesa@cpan.org>
+        Added more docs to ::Dot, and more tests
+
+0.02    Thu Aug 11 01:09:21 CEST 2005  Mark Stosberg <mark@summersault.com>
+        * minor doc formatting tweaks
+
 0.01    Wed Aug 10 16:21:03 CEST 2005  Rhesa Rozendaal <rhesa@cpan.org>
         Initial release on CPAN
 

@@ -1,6 +1,6 @@
 package HTML::Template::Plugin::Dot;
 use vars qw/$VERSION/;
-$VERSION = '0.92';
+$VERSION = '0.93';
 use strict;
 
 =head1 NAME
@@ -15,7 +15,7 @@ HTML::Template::Plugin::Dot - Add Magic Dot notation to HTML::Template
  my $t = HTML::Template::Pluggable->new(...);
 
 Now you can use chained accessor calls and nested hashrefs as params, and access
-them with a dot notation. You can even pass basic arguments to the methods. 
+them with a dot notation. You can even pass arguments to the methods. 
 
 For example, in your code: 
 
@@ -28,9 +28,9 @@ And then in your template you can reference specific values in the structure:
 
 =head1 DESCRIPTION
 
-By adding support for this dot notation to HTML::Template, the programmers job
-of sending data to the template is easier, and designers have easier access to
-more data to display in the template, without learning any more tag syntax. 
+By adding support for this dot notation to L<HTML::Template>, the programmers'
+job of sending data to the template is easier, and designers have easier access
+to more data to display in the template, without learning any more tag syntax. 
 
 The dot notation is supported on the following tags: C<< <TMPL_VAR> >>,
 C<< <TMPL_IF> >> and C<< <TMPL_UNLESS> >>. 
@@ -88,25 +88,71 @@ In your template:
 
   Amount: <tmpl_var Formatter.format_currency('US',order.total_amount)>
 
+(hint: see L<Number::Format>)
+
+This even extends to references to plain tmpl_vars in your template:
+
+ $t->param( Formatter => Formatter->new,
+            plain     => 'Jane'         );
+
+ <tmpl_var Formatter.reverse(plain)> is
+ <tmpl_var plain> backwards
+
+
 =head2 LIMITATIONS
 
 =over 4
 
 =item * TMPL_VARs inside of loops won't work unless a simple patch is applied
-to HTML::Template. We hope it will be updated with this patch soon.
+to HTML::Template.
 
-http://rt.cpan.org/NoAuth/Bug.html?id=14037
+We hope it will be updated with this patch soon. See
+http://rt.cpan.org/NoAuth/Bug.html?id=14037 for details.
 
 Alternately, you can apply the patch to your own copy.  
 
-=item * TMPL_LOOPs are not (yet) supported. You still need to pass an array
-of hashrefs yourself.
+=item * TMPL_LOOPs are not (yet) supported.
 
-=item * Casing of hash keys follows the option C<case_sensitive> of
-L<HTML::Template>. If you do not use that option, all parameter names are 
-converted to lower case.
+In the sense that you can't have a dot expression in them (even when it returns
+a suitable data structure). You still need to pass an array of hashrefs
+yourself. Something like this is a reasonable idiom:
+
+ $t->param( deloop => [                      # array ref
+                       map {
+                        { object => $_ }     # hash ref
+                       }
+                       @your_objects
+                      ]
+ );
+
+=item * Casing of parameter names
+
+Casing of parameter names follows the option C<case_sensitive> of
+HTML::Template. If you do not use that option, all parameter names are 
+converted to lower case. I suggest turning this option on to avoid confusion.
+
+=item * Quotes and spaces
+
+Because of the way HTML::Template parses parameter names (which follows the
+rules of HTML attributes), you have to be careful when your expressions contain
+spaces or quote characters. You can say
+C<< <tmpl_var something.without.spaces> >>, but not
+C<< <tmpl_var something with spaces> >>. You can use single or double quotes
+around your entire expression, and then use the other one inside:
+C<< <tmpl_var name="some.method('with arguments')"> >> This is the recommended
+way to write your expressions.
+
+(Note: within expressions, the characters in C<< [`'"] >> are recognised as
+quote characters. So if you need to pass literal quotes to a method, you could
+do it like this: C<< <tmpl_var name='some.method(`need a " here`)'> >>. )
 
 =back
+
+=head2 PERFORMANCE
+
+No attempt to even measure performance has been made. For now the focus is on
+usability and stability. If you carry out benchmarks, or have suggestions for
+performance improvements, be sure to let us know!
 
 =cut
 
@@ -242,7 +288,7 @@ sub _param_to_tmpl {
 			# - $ref is an object
 			#	- if we can call $id on it
 			#	  - in this case we further parse the argument list for strings
-			#	  or numbers
+			#	  or numbers or references to other h-t params
 			#	- or if it's an attribute
 			# - or a hashref and we have no $data
 			# We'll use the result of that operation for $ref as long as there are dots
@@ -317,11 +363,15 @@ sub _param_to_tmpl {
 							croak("Bare word '$data' not allowed in argument list to '$id' in dot expression '$toke_name'") if $data;
 						}
 						# carp("calling '$id' on '$ref' with '@args'");
-						$ref = $ref->$id(@args);
+						eval {
+							$ref = $ref->$id(@args);
+						} or return undef;
+						
 					}
 					elsif(reftype($ref) eq'HASH') {
 						croak("Can't access hash key '$id' with a parameter list! ($data)") if $data;
-						$ref = $ref->{$id};
+						
+						$ref = exists( $ref->{$id} ) ? $ref->{$id} : undef;
 					}
 					else {
 						croak("Don't know what to do with reference '$ref', identifier '$id' and data '$data', giving up.");
@@ -329,7 +379,7 @@ sub _param_to_tmpl {
 				}
 				elsif(ref($ref) eq 'HASH') {
 					# carp("accessing key $id on $ref");
-					$ref = $ref->{$id};
+					$ref = exists( $ref->{$id} ) ? $ref->{$id} : undef;	# this is paranoid: my tests indicated just doing the assignment doesn't create the new key either. still, better err on the side of caution
 				}
 			}
 			
