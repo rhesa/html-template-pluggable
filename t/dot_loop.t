@@ -11,7 +11,6 @@ $mock->mock( 'method', sub { "chained methods work inside tmpl_loop" } );
 my $mock2 = Test::MockObject->new();
 $mock2->mock( 'some', sub { $mock2 } );
 $mock2->mock( 'method', sub { "chained methods work inside a loop twice" } );
-
 my ($output, $template, $result);
 $template = qq{<tmpl_loop deloop><tmpl_var num><tmpl_var should_be.some.method></tmpl_loop>};
 

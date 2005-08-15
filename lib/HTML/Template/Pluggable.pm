@@ -2,7 +2,7 @@ package HTML::Template::Pluggable;
 use base 'HTML::Template';
 use Class::Trigger;
 use vars (qw/$VERSION/);
-$VERSION = '0.05';
+$VERSION = '0.06';
 use warnings;
 use strict;
 use Carp;
@@ -84,7 +84,7 @@ sub param {
   croak("HTML::Template->param() : You gave me an odd number of parameters to param()!")
     unless ((@_ % 2) == 0);
 
-  $self->call_trigger('pre_param', @_);
+  $self->call_trigger('middle_param', @_);
 
   # strangely, changing this to a "while(@_) { shift, shift }" type
   # loop causes perl 5.004_04 to die with some nonsense about a
@@ -132,21 +132,21 @@ it may be feasible to add them-- check the FAQ then ask about it on the list.
 
 L<Class::Trigger> is used to provide plugins. Basically, you can just: 
 
-	HTML::Template->add_trigger('pre_param', \&trigger);
+	HTML::Template->add_trigger('middle_param', \&trigger);
 
 A good place to add one is in your plugin's C<import> subroutine:
 
 	package HTML::Template::Plugin::MyPlugin;
 	use base 'Exporter';
 	sub import {
-        HTML::Template->add_trigger('pre_param', \&dot_notation);
+        HTML::Template->add_trigger('middle_param', \&dot_notation);
 		goto &Exporter::import;
 	}
 
-=head2 pre_param trigger 
+=head2 middle_param trigger 
 
    # in a Plugin's import() routine. 
-   HTML::Template->add_trigger('pre_param',   \&_set_tmpl_var_with_dot  );
+   HTML::Template->add_trigger('middle_param',   \&_set_tmpl_var_with_dot  );
 
 This sets a callback that is executed in param() with all of the same
 arguments. It is only useful for altering how /setting/ params works. 

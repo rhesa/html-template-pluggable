@@ -38,20 +38,20 @@ WRITING PLUGINS
 
     Class::Trigger is used to provide plugins. Basically, you can just:
 
-            HTML::Template->add_trigger('pre_param', \&trigger);
+            HTML::Template->add_trigger('middle_param', \&trigger);
 
     A good place to add one is in your plugin's "import" subroutine:
 
             package HTML::Template::Plugin::MyPlugin;
             use base 'Exporter';
             sub import {
-            HTML::Template->add_trigger('pre_param', \&dot_notation);
+            HTML::Template->add_trigger('middle_param', \&dot_notation);
                     goto &Exporter::import;
             }
 
-  pre_param trigger
+  middle_param trigger
        # in a Plugin's import() routine. 
-       HTML::Template->add_trigger('pre_param',   \&_set_tmpl_var_with_dot  );
+       HTML::Template->add_trigger('middle_param',   \&_set_tmpl_var_with_dot  );
 
     This sets a callback that is executed in param() with all of the same
     arguments. It is only useful for altering how /setting/ params works.

@@ -1,6 +1,6 @@
 package HTML::Template::Plugin::Dot;
 use vars qw/$VERSION/;
-$VERSION = '0.93';
+$VERSION = '0.94';
 use strict;
 
 =head1 NAME
@@ -31,9 +31,6 @@ And then in your template you can reference specific values in the structure:
 By adding support for this dot notation to L<HTML::Template>, the programmers'
 job of sending data to the template is easier, and designers have easier access
 to more data to display in the template, without learning any more tag syntax. 
-
-The dot notation is supported on the following tags: C<< <TMPL_VAR> >>,
-C<< <TMPL_IF> >> and C<< <TMPL_UNLESS> >>. 
 
 =head2 EXAMPLES
 
@@ -98,6 +95,45 @@ This even extends to references to plain tmpl_vars in your template:
  <tmpl_var Formatter.reverse(plain)> is
  <tmpl_var plain> backwards
 
+=head2 TMPL_LOOPs
+
+As of version 0.94, the dot notation is also supported on TMPL_LOOP tags (but
+see the L</LIMITATIONS> section).
+
+Given an object method (or a hash key) that returns an array or a reference
+to an array, we will unwrap that array for use in the loop. Individual array
+elements are mapped to a hash C<< { 'this' => $elt } >>, so that you can refer
+to them in TMPL_VARs as "this.something".
+
+An example might help. Let's use the canonical Class::DBI example for our data.
+Suppose you have an $artist object, which has_many CDs. You can now pass just
+the $artist object, and handle the loops in the template:
+
+  $t->param( artist => $artist );
+
+The template:
+
+  <tmpl_var artist.name> has released these albums:
+  <tmpl_loop artist.cds>
+    <tmpl_var this.title> - <tmpl_var this.year>
+  </tmpl_loop>
+
+As you can see, each element from the artist.cds() array is called "this" by
+default. You can supply your own name by appending ': name' like this:
+
+ <tmpl_loop artist.cds:cd>
+   <tmpl_var cd.title>
+   ...
+
+That's not the end of it! You can even nest these loops, displaying the Tracks
+for each CD like so:
+
+ <tmpl_loop artist.cds:cd>
+   <tmpl_var cd.title>
+   <tmpl_loop cd.tracks:track>
+     - <tmpl_var track.title> ( <tmpl_var track.tracktime> )
+   </tmpl_loop>
+ </tmpl_loop>
 
 =head2 LIMITATIONS
 
@@ -110,20 +146,6 @@ We hope it will be updated with this patch soon. See
 http://rt.cpan.org/NoAuth/Bug.html?id=14037 for details.
 
 Alternately, you can apply the patch to your own copy.  
-
-=item * TMPL_LOOPs are not (yet) supported.
-
-In the sense that you can't have a dot expression in them (even when it returns
-a suitable data structure). You still need to pass an array of hashrefs
-yourself. Something like this is a reasonable idiom:
-
- $t->param( deloop => [                      # array ref
-                       map {
-                        { object => $_ }     # hash ref
-                       }
-                       @your_objects
-                      ]
- );
 
 =item * Casing of parameter names
 
@@ -164,7 +186,7 @@ use base 'Exporter';
 
 sub import {
         # my $caller = scalar(caller);
-        HTML::Template::Pluggable->add_trigger('pre_param', \&dot_notation);
+        HTML::Template::Pluggable->add_trigger('middle_param', \&dot_notation);
 		goto &Exporter::import;
 }
 
@@ -174,6 +196,7 @@ sub dot_notation {
     my $param_map = $self->{param_map};
 
 	# carp("dot_notation called for $_[0]");
+	# carp("param map: ", Dumper($param_map));
     # @_ has already been setup for us by the time we're called. 
 
     for (my $x = 0; $x <= $#_; $x += 2) {
@@ -191,14 +214,20 @@ sub dot_notation {
         my $value_type = ref($value);
         if (@dot_matches) {
             for (@dot_matches) {
+				# carp("calling _param_to_tmpl for $_, $param, $value");
                 my $value_for_tmpl = _param_to_tmpl($self,$_,$param,$value);
 				# carp("_param_to_tmpl returned '$value_for_tmpl' for '$_', '$param', '$value'");
                 unless (defined($value_type) and length($value_type) and ($value_type eq 'ARRAY' 
                        or (ref($value_for_tmpl) and (ref($value_for_tmpl) !~ /^(CODE)|(HASH)|(SCALAR)$/) and $value_for_tmpl->isa('ARRAY')))) {
-                    (ref($param_map->{$_}) eq 'HTML::Template::VAR') or
-                    croak("HTML::Template::param() : attempt to set parameter '$param' with a scalar - parameter is not a TMPL_VAR!");
+					(ref($param_map->{$_}) eq 'HTML::Template::VAR') or
+						croak("HTML::Template::param() : attempt to set parameter '$param' with a scalar - parameter is not a TMPL_VAR!");
                     ${$param_map->{$_}} = $value_for_tmpl;
                 }
+				else {
+					(ref($param_map->{$_}) eq 'HTML::Template::LOOP') or
+						croak("HTML::Template::param() : attempt to set parameter '$param' with an array ref - parameter is not a TMPL_LOOP!");
+					$param_map->{$_}[HTML::Template::LOOP::PARAM_SET] = $value_for_tmpl;
+				}
 
                 # Necessary for plugin system compatibility
                 $self->{num_vars_left_in_loop} -= 1;
@@ -208,22 +237,21 @@ sub dot_notation {
         # We still need to care about tmpl_loops that aren't dot matches so we can adjust their loops
         elsif (defined($value_type) and length($value_type) and ($value_type eq 'ARRAY' 
                             or ((ref($value) !~ /^(CODE)|(HASH)|(SCALAR)$/) and $value->isa('ARRAY')))) {
-                    (ref($param_map->{$param}) eq 'HTML::Template::LOOP') or
-                    croak("HTML::Template::param() : attempt to set parameter '$param' with an array ref - parameter is not a TMPL_LOOP!");
+			(ref($param_map->{$param}) eq 'HTML::Template::LOOP') or
+				croak("HTML::Template::param() : attempt to set parameter '$param' with an array ref - parameter is not a TMPL_LOOP!");
 
-         #  TODO: Use constant names instead of "0"
-         $self->{num_vars_left_in_loop} += keys %{ $param_map->{$param}[0]{'0'}{'param_map'} };
+			#  TODO: Use constant names instead of "0"
+			$self->{num_vars_left_in_loop} += keys %{ $param_map->{$param}[HTML::Template::LOOP::TEMPLATE_HASH]{'0'}{'param_map'} };
 
-    } 
-    else {
-        (ref($param_map->{$param}) eq 'HTML::Template::VAR') or
-         croak("HTML::Template::param() : attempt to set parameter '$param' with a scalar - parameter is not a TMPL_VAR!");
-         # intetionally /don't/ set the values for non-dot notation  params,
-         # and don't mark them as done, just that they exist.    
-         $self->{num_vars_left_in_loop} -= 1;
-    }
-  }
-        
+		} 
+		else {
+			(ref($param_map->{$param}) eq 'HTML::Template::VAR') or
+				croak("HTML::Template::param() : attempt to set parameter '$param' with a scalar - parameter is not a TMPL_VAR!");
+			# intetionally /don't/ set the values for non-dot notation  params,
+			# and don't mark them as done, just that they exist.    
+			$self->{num_vars_left_in_loop} -= 1;
+		}
+	}
 }
         
 # Check to see if a param exists in the template, with support for dot notation
@@ -233,7 +261,7 @@ sub dot_notation {
 sub _exists_in_tmpl {
     my ($param_map,$param) = @_;
     return 1 if exists $param_map->{$param};
-    if (my @matching_dot_tokes = grep { /^$param\./ } keys %$param_map) {
+    if (my @matching_dot_tokes = grep { /^$param\./ } keys %$param_map) { # (?:\s*[fF][oO][rR]\s+[_a-z]\w*\s+[Ii][nN]\s+)? after the ^ can be used for supporting "for cd in artist.cds" style loops
         return (1, @matching_dot_tokes);
     }
     else {
@@ -268,7 +296,12 @@ sub _param_to_tmpl {
         return $param_value;
     }
     elsif (my ($one, $the_rest) = split /\./, $toke_name, 2) { 
+		# my $loopmap_name = 'this'; # default for mapping array elements for loop vars
+		# $loopmap_name = $1 if $one =~ s/^\s*[fF][oO][rR]\s+([_a-z]\w*)\s+[Ii][nN]\s+//; the "for x in y" style
         if ($one eq $param_name) {
+			my $loopmap_name = 'this'; # default for mapping array elements for loop vars
+			$loopmap_name = $1 if $the_rest =~ s/\s*:\s*([_a-z]\w*)\s*$//;
+
             # NOTE: we do the can-can because UNIVSERAL::isa($something, 'UNIVERSAL')
             # doesn't appear to work with CGI, returning true for the first call
             # and false for all subsequent calls. 
@@ -350,13 +383,12 @@ sub _param_to_tmpl {
 										push @args, $prev;
 									}
 									else {
-										# croak("Can't resolve '$m': '$o' not available. Remember to set nested objects before the ones that call them!");
 										croak("Attempt to reference nonexisting parameter '$m' in argument list to '$id' in dot expression '$toke_name': $m is not a TMPL_VAR!");
 									}
 								}
 								else {
 									local $,= ', ';
-									carp("Parsing is in some weird state. args so far are '@args'. data = '$data'. id='$id'");
+									# carp("Parsing is in some weird state. args so far are '@args'. data = '$data'. id='$id'");
 									last;
 								}
 							}
@@ -364,14 +396,16 @@ sub _param_to_tmpl {
 						}
 						# carp("calling '$id' on '$ref' with '@args'");
 						eval {
-							$ref = $ref->$id(@args);
+							my @a = $ref->$id(@args);
+							$ref = $#a==0?$a[0]:\@a;
 						} or return undef;
 						
 					}
 					elsif(reftype($ref) eq'HASH') {
 						croak("Can't access hash key '$id' with a parameter list! ($data)") if $data;
 						
-						$ref = exists( $ref->{$id} ) ? $ref->{$id} : undef;
+						my @a = exists( $ref->{$id} ) ? $ref->{$id} : undef;
+						$ref = $#a==0?$a[0]:\@a;
 					}
 					else {
 						croak("Don't know what to do with reference '$ref', identifier '$id' and data '$data', giving up.");
@@ -379,13 +413,14 @@ sub _param_to_tmpl {
 				}
 				elsif(ref($ref) eq 'HASH') {
 					# carp("accessing key $id on $ref");
-					$ref = exists( $ref->{$id} ) ? $ref->{$id} : undef;	# this is paranoid: my tests indicated just doing the assignment doesn't create the new key either. still, better err on the side of caution
+					my @a = exists( $ref->{$id} ) ? $ref->{$id} : undef;	# this is paranoid: my tests indicated just doing the assignment doesn't create the new key either. still, better err on the side of caution
+					$ref = $#a==0?$a[0]:\@a;
 				}
 			}
 			
 			croak("Trailing characters '$the_rest' in dot expression '$toke_name'") if $the_rest;
 			# carp("we got $ref. the rest = $the_rest");
-			return $ref;
+			return ref($ref) eq 'ARRAY' ? (bless [ map { {$loopmap_name => $_} } @$ref ], 'HTP::Dot::LOOP') : $ref;
 		}
         # no match. give up. 
         else {
@@ -404,8 +439,8 @@ sub _param_to_tmpl {
 =head1 CONTRIBUTING
 
 Patches, questions and feedback are welcome. This project is managed using
-the darcs source control system ( http://www.darcs.net/ ). My darcs archive is here:
-http://mark.stosberg.com/darcs_hive/ht-dot/
+the darcs source control system ( http://www.darcs.net/ ). A public darcs archive is here:
+http://cgiapp.erlbaum.net/darcs_hive/ht-pluggable/
 
 =head1 AUTHORS
 

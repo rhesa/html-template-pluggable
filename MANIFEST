@@ -9,6 +9,7 @@ MANIFEST			This list of files
 MANIFEST.SKIP
 META.yml
 README
+t/dot_for_loops.t
 t/dot_loop.t
 t/dot_notation.t
 t/dot_notation_methods_with_args.t

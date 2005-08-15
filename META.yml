@@ -1,6 +1,6 @@
 ---
 name: HTML-Template-Pluggable
-version: 0.05
+version: 0.06
 author: Mark Stosberg <mark@summersault.com>
 abstract: Extends HTML::Template with plugin support
 license: perl
@@ -14,8 +14,8 @@ requires:
 provides:
   HTML::Template::Pluggable:
     file: lib/HTML/Template/Pluggable.pm
-    version: 0.05
+    version: 0.06
   HTML::Template::Plugin::Dot:
     file: lib/HTML/Template/Plugin/Dot.pm
-    version: 0.93
+    version: 0.94
 generated_by: Module::Build version 0.25
