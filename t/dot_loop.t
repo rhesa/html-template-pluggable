@@ -24,6 +24,7 @@ eval {
     $t->param('deloop',[ {should_be => $mock, num => 1}, {should_be => $mock2, num => 2} ]);
     $output =  $t->output;
 };
+
 SKIP: {
     skip "HTML::Template subclassing bug for tmpl_loop support. See: http://rt.cpan.org/NoAuth/Bug.html?id=14037", 2 if $@;
     like($output ,qr/chained methods work inside tmpl_loop/);

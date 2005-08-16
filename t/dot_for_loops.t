@@ -2,10 +2,11 @@ use Test::More;
 use Test::MockObject;
 use Data::Dumper;
 
+use lib 't/lib';
 use strict;
 
 plan tests => 3						# use_ok
-			+ 6						# my tests
+			+ 7						# my tests
 	;
 
 use_ok('HTML::Template::Pluggable');
@@ -13,6 +14,7 @@ use_ok('HTML::Template::Plugin::Dot');
 use_ok('Test::MockObject');
 
 my $mock = Test::MockObject->new();
+$mock->mock( 'name', sub { 'mock' } );
 $mock->mock( 'that_returns_loopdata', sub {
 		my ($self, $count) = @_;
 		$count ||= 5;
@@ -50,10 +52,10 @@ $mock->mock( 'nested', sub {
 
 my ($tag, $out);
 
-$tag = q{ <tmpl_loop name="object.that_returns_loopdata(3)"><tmpl_var this.a>, <tmpl_var this.b>. </tmpl_loop> };
+$tag = q{ <tmpl_var object.name>: <tmpl_loop name="object.that_returns_loopdata(3)"><tmpl_var this.a>, <tmpl_var this.b>. </tmpl_loop> };
 $out = get_output($tag, $mock);
 SKIP: {
-	skip "HTML::Template subclassing bug for tmpl_loop support. See: http://rt.cpan.org/NoAuth/Bug.html?id=14037", 6 if $@;
+	skip "HTML::Template subclassing bug for tmpl_loop support. See: http://rt.cpan.org/NoAuth/Bug.html?id=14037", 7 if $@;
 	like($out, qr/1, 10/, 'Wrapped loops work with implicit "this" mapping');
 
 	$tag = q{ <tmpl_loop name="object.that_returns_loopdata(4) : that"><tmpl_var that.a>, <tmpl_var that.b>. </tmpl_loop> };
@@ -72,7 +74,11 @@ SKIP: {
 	$out = get_output($tag, $mock);
 	like($out, qr/\Q3, (3)(6)(9)./, 'Wrapped nested loops work with arrayrefs and explicit "inner" mapping');
 
-	$tag = q{ <tmpl_loop name="object.nested(3)"><tmpl_var this.a>, <tmpl_loop this.b>(<tmpl_var this.c>)</tmpl_loop>. </tmpl_loop> };
+	$tag = q{ <tmpl_var object.name> <tmpl_loop name="object.nested(1)"><tmpl_var this.a>, <tmpl_loop this.b>(<tmpl_var this.c>)</tmpl_loop>. </tmpl_loop> };
+	$out = get_output($tag, $mock);
+	like($out, qr/\Q1, (3)./, 'Wrapped nested loops work with arrayrefs and implicit mapping everywhere (single return value)');
+
+	$tag = q{ <tmpl_var object.name> <tmpl_loop name="object.nested(3)"><tmpl_var this.a>, <tmpl_loop this.b>(<tmpl_var this.c>)</tmpl_loop>. </tmpl_loop> };
 	$out = get_output($tag, $mock);
 	like($out, qr/\Q3, (3)(6)(9)./, 'Wrapped nested loops work with arrayrefs and implicit mapping everywhere');
 }

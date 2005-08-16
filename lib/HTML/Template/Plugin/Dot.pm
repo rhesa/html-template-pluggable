@@ -1,6 +1,6 @@
 package HTML::Template::Plugin::Dot;
 use vars qw/$VERSION/;
-$VERSION = '0.94';
+$VERSION = '0.95';
 use strict;
 
 =head1 NAME
@@ -226,7 +226,7 @@ sub dot_notation {
 				else {
 					(ref($param_map->{$_}) eq 'HTML::Template::LOOP') or
 						croak("HTML::Template::param() : attempt to set parameter '$param' with an array ref - parameter is not a TMPL_LOOP!");
-					$param_map->{$_}[HTML::Template::LOOP::PARAM_SET] = $value_for_tmpl;
+					$param_map->{$_}[HTML::Template::LOOP::PARAM_SET()] = $value_for_tmpl;
 				}
 
                 # Necessary for plugin system compatibility
@@ -241,7 +241,7 @@ sub dot_notation {
 				croak("HTML::Template::param() : attempt to set parameter '$param' with an array ref - parameter is not a TMPL_LOOP!");
 
 			#  TODO: Use constant names instead of "0"
-			$self->{num_vars_left_in_loop} += keys %{ $param_map->{$param}[HTML::Template::LOOP::TEMPLATE_HASH]{'0'}{'param_map'} };
+			$self->{num_vars_left_in_loop} += keys %{ $param_map->{$param}[HTML::Template::LOOP::TEMPLATE_HASH()]{'0'}{'param_map'} };
 
 		} 
 		else {
@@ -328,14 +328,15 @@ sub _param_to_tmpl {
 			# followed by an identifier
 
 			my $ref = $param_value;	
-			
+			my $want_loop = ref($self->{param_map}{$toke_name}) eq 'HTML::Template::LOOP';
+			my(@results); # keeps return values from dot operations
+		THE_REST:
 			while( $the_rest =~ s/^
 						([_a-z]\w*)				# an identifier
 						($RE{balanced})?		# optional param list
 						(?:\.|$)				# dot or end of string
 					//xi ) {
 				my ($id, $data) = ($1, $2);
-				
 				if (ref($ref) && UNIVERSAL::can($ref, 'can')) {
 					# carp("$ref is an object, and its ref=", ref($ref), Dumper($ref));
 					if($ref->can($id)) {
@@ -396,16 +397,22 @@ sub _param_to_tmpl {
 						}
 						# carp("calling '$id' on '$ref' with '@args'");
 						eval {
-							my @a = $ref->$id(@args);
-							$ref = $#a==0?$a[0]:\@a;
-						} or return undef;
+							if($the_rest or !$want_loop) {
+								$ref = $ref->$id(@args);
+							} else {
+								@results = $ref->$id(@args);
+							}
+						} or $the_rest='', last THE_REST;
 						
 					}
 					elsif(reftype($ref) eq'HASH') {
 						croak("Can't access hash key '$id' with a parameter list! ($data)") if $data;
 						
-						my @a = exists( $ref->{$id} ) ? $ref->{$id} : undef;
-						$ref = $#a==0?$a[0]:\@a;
+						if($the_rest or !$want_loop) {
+							$ref = exists( $ref->{$id} ) ? $ref->{$id} : undef;
+						} else {
+							@results = exists( $ref->{$id} ) ? $ref->{$id} : undef;
+						}
 					}
 					else {
 						croak("Don't know what to do with reference '$ref', identifier '$id' and data '$data', giving up.");
@@ -413,14 +420,24 @@ sub _param_to_tmpl {
 				}
 				elsif(ref($ref) eq 'HASH') {
 					# carp("accessing key $id on $ref");
-					my @a = exists( $ref->{$id} ) ? $ref->{$id} : undef;	# this is paranoid: my tests indicated just doing the assignment doesn't create the new key either. still, better err on the side of caution
-					$ref = $#a==0?$a[0]:\@a;
+					if($the_rest or !$want_loop) {
+						$ref = exists( $ref->{$id} ) ? $ref->{$id} : undef;
+					} else {
+						@results = exists( $ref->{$id} ) ? $ref->{$id} : undef;
+					}
 				}
+
+				# carp("setting ref for id=$id, toke=$toke_name, param=$param_name, and param map wants a ", ref($self->{param_map}{$toke_name}), " What we got is ", ref($ref), ", results is ", scalar(@results));
+
+			}
+			
+			unless($the_rest or !$want_loop) {
+				$ref = ($#results==0 and ref($results[0]) eq 'ARRAY') ? $results[0] : \@results;
 			}
 			
 			croak("Trailing characters '$the_rest' in dot expression '$toke_name'") if $the_rest;
 			# carp("we got $ref. the rest = $the_rest");
-			return ref($ref) eq 'ARRAY' ? (bless [ map { {$loopmap_name => $_} } @$ref ], 'HTP::Dot::LOOP') : $ref;
+			return ($want_loop and ref($ref) eq 'ARRAY') ? (bless [ map { {$loopmap_name => $_} } @$ref ], 'HTP::Dot::LOOP') : $ref;
 		}
         # no match. give up. 
         else {
