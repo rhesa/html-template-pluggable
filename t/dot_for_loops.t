@@ -2,7 +2,6 @@ use Test::More;
 use Test::MockObject;
 use Data::Dumper;
 
-use lib 't/lib';
 use strict;
 
 plan tests => 3						# use_ok

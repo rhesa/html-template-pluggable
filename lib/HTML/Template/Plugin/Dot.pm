@@ -1,6 +1,6 @@
 package HTML::Template::Plugin::Dot;
 use vars qw/$VERSION/;
-$VERSION = '0.95';
+$VERSION = '0.96';
 use strict;
 
 =head1 NAME
@@ -226,7 +226,7 @@ sub dot_notation {
 				else {
 					(ref($param_map->{$_}) eq 'HTML::Template::LOOP') or
 						croak("HTML::Template::param() : attempt to set parameter '$param' with an array ref - parameter is not a TMPL_LOOP!");
-					$param_map->{$_}[HTML::Template::LOOP::PARAM_SET()] = $value_for_tmpl;
+					$param_map->{$_}[HTML::Template::LOOP::PARAM_SET] = $value_for_tmpl;
 				}
 
                 # Necessary for plugin system compatibility
@@ -241,7 +241,7 @@ sub dot_notation {
 				croak("HTML::Template::param() : attempt to set parameter '$param' with an array ref - parameter is not a TMPL_LOOP!");
 
 			#  TODO: Use constant names instead of "0"
-			$self->{num_vars_left_in_loop} += keys %{ $param_map->{$param}[HTML::Template::LOOP::TEMPLATE_HASH()]{'0'}{'param_map'} };
+			$self->{num_vars_left_in_loop} += keys %{ $param_map->{$param}[HTML::Template::LOOP::TEMPLATE_HASH]{'0'}{'param_map'} } if exists $param_map->{$param}[HTML::Template::LOOP::TEMPLATE_HASH]{'0'};
 
 		} 
 		else {
