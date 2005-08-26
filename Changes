@@ -1,5 +1,8 @@
 Revision history for HTML-Template-Pluggable
 
+0.12    2005-08-26 Rhesa Rozendaal <rhesa@cpan.org>
+        - added before_output hook
+
 0.08	Wed Aug 17 02:30:37 CEST 2005  Rhesa Rozendaal <rhesa@cpan.org>
         - fixed bug with global_vars => 1
         - made sure all original HTML::Template tests pass with ::Pluggable

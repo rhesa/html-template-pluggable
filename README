@@ -67,6 +67,11 @@ WRITING PLUGINS
     call to param(), so that like with a hash, you have the option to reset
     a param later with the same name.
 
+  before_output trigger
+       HTML::Template->add_trigger('before_output',   \&_last_chance_params  );
+
+    This sets a callback which is executed right before output is generated.
+
 SEE ALSO
     o   HTML::Template::Plugin::Dot - Add Template Toolkit's magic dot
         notation to HTML::Template.

@@ -2,7 +2,7 @@ package HTML::Template::Pluggable;
 use base 'HTML::Template';
 use Class::Trigger;
 use vars (qw/$VERSION/);
-$VERSION = '0.11';
+$VERSION = '0.12';
 use warnings;
 use strict;
 use Carp;
@@ -119,6 +119,15 @@ sub param {
   }
 }
 
+sub output
+{
+	my $self = shift;
+	$self->call_trigger('before_output', @_);
+
+	$self->SUPER::output(@_);
+}
+
+
 =head1 WRITING PLUGINS
 
 HTML::Template offers a plugin system which allows developers to extend the
@@ -160,6 +169,12 @@ C<$param_name> would be a key from C<$self->{param_map}>.  This notifies the
 other plugins and the core param() routine to skip trying to set this value.
 $self->{param_map_done} is reset with each call to param(), so that like with a
 hash, you have the option to reset a param later with the same name.
+
+=head2 before_output trigger
+
+   HTML::Template->add_trigger('before_output',   \&_last_chance_params  );
+
+This sets a callback which is executed right before output is generated.
 
 =head1 SEE ALSO
 
