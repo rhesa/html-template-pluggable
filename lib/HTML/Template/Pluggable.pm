@@ -2,7 +2,7 @@ package HTML::Template::Pluggable;
 use base 'HTML::Template';
 use Class::Trigger;
 use vars (qw/$VERSION/);
-$VERSION = '0.12';
+$VERSION = '0.13';
 use warnings;
 use strict;
 use Carp;
@@ -32,17 +32,15 @@ and turn this into a null sub-class.
 =head1 STATUS
 
 The design of the plugin system is still in progress. Right now we have just
-one trigger in param. The name and function of this may change, and we would like
-to add triggers in new() and output() when the need arises. 
+two triggers, in param and output. The name and function of this may change,
+and we would like to add triggers in new() and other methods when the need
+arises. 
 
 All we promise for now is to keep L<HTML::Template::Plugin::Dot> compatible.
 Please get in touch if you have suggestions with feedback on designing the
 plugin system if you would like to contribute. 
 
 =cut
-
-# required to work inside tmpl_loop
-# sub _new_from_loop { }
 
 sub param {
   my $self = shift;
@@ -119,12 +117,13 @@ sub param {
   }
 }
 
+
 sub output
 {
-	my $self = shift;
-	$self->call_trigger('before_output', @_);
+    my $self = shift;
+    $self->call_trigger('before_output', @_);
 
-	$self->SUPER::output(@_);
+    $self->SUPER::output(@_);
 }
 
 
@@ -135,46 +134,56 @@ functionality in significant ways without creating a creating a sub-class,
 which might be impossible to use in combination with another sub-class
 extension.
 
-Currently, one trigger has been made available to alter how the values of
+Currently, two triggers have been made available to alter how the values of
 TMPL_VARs are set. If more hooks are needed to implement your own plugin idea,
 it may be feasible to add them-- check the FAQ then ask about it on the list.
 
 L<Class::Trigger> is used to provide plugins. Basically, you can just: 
 
-	HTML::Template->add_trigger('middle_param', \&trigger);
+    HTML::Template->add_trigger('middle_param', \&trigger);
 
 A good place to add one is in your plugin's C<import> subroutine:
 
-	package HTML::Template::Plugin::MyPlugin;
-	use base 'Exporter';
-	sub import {
+    package HTML::Template::Plugin::MyPlugin;
+    use base 'Exporter';
+    sub import {
         HTML::Template->add_trigger('middle_param', \&dot_notation);
-		goto &Exporter::import;
-	}
+        goto &Exporter::import;
+    }
 
-=head2 middle_param trigger 
+=head2 TRIGGER LOCATIONS
+
+=over 4
+
+=item param
+
+We have added one trigger location to this method, named C<middle_param>.
 
    # in a Plugin's import() routine. 
    HTML::Template->add_trigger('middle_param',   \&_set_tmpl_var_with_dot  );
 
-This sets a callback that is executed in param() with all of the same
+This sets a callback which is executed in param() with all of the same
 arguments. It is only useful for altering how /setting/ params works. 
 The logic to read a param is unaffected. 
 
-It can set any TMPL_VAR values before the normal param logic kicks
-in. To do this, C<$self->{param_map}> is modified as can be seen from source in
+It can set any TMPL_VAR values before the normal param logic kicks in. To do
+this, C<$self-E<gt>{param_map}> is modified as can be seen from source in
 HTML::Template::param(). However, it must obey the following convention of
 setting $self->{param_map_done}{$param_name} for each param that is set.
-C<$param_name> would be a key from C<$self->{param_map}>.  This notifies the
+C<$param_name> would be a key from C<$self-E<gt>{param_map}>.  This notifies the
 other plugins and the core param() routine to skip trying to set this value.
 $self->{param_map_done} is reset with each call to param(), so that like with a
 hash, you have the option to reset a param later with the same name.
 
-=head2 before_output trigger
+=item output
+
+One trigger location here: C<before_output>.
 
    HTML::Template->add_trigger('before_output',   \&_last_chance_params  );
 
 This sets a callback which is executed right before output is generated.
+
+=back
 
 =head1 SEE ALSO
 

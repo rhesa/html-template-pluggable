@@ -1,5 +1,13 @@
 Revision history for HTML-Template-Pluggable
 
+0.13    2005-10-04  Rhesa Rozendaal <rhesa@cpan.org>
+        - bug fixes in ::Dot:
+          - using obj.loop in a <tmpl_if> or <tmpl_var> now returns the
+            number of elements; this is a slight incompatibility with 
+            H::T, but makes the if's work
+          - single char method names in nested calls work properly now
+        - added pod tests to improve kwalitee...
+
 0.12    2005-08-26 Rhesa Rozendaal <rhesa@cpan.org>
         - added before_output hook
 

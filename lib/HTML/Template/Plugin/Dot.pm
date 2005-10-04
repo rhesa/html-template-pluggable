@@ -1,6 +1,6 @@
 package HTML::Template::Plugin::Dot;
 use vars qw/$VERSION/;
-$VERSION = '0.96';
+$VERSION = '0.97';
 use strict;
 
 =head1 NAME
@@ -186,11 +186,11 @@ use base 'Exporter';
 
 sub import {
         # my $caller = scalar(caller);
-        HTML::Template::Pluggable->add_trigger('middle_param', \&dot_notation);
+        HTML::Template::Pluggable->add_trigger('middle_param', \&_dot_notation);
 		goto &Exporter::import;
 }
 
-sub dot_notation {
+sub _dot_notation {
     my $self = shift;
     my $options = $self->{options};
     my $param_map = $self->{param_map};
@@ -216,8 +216,9 @@ sub dot_notation {
             for (@dot_matches) {
 				# carp("calling _param_to_tmpl for $_, $param, $value");
                 my $value_for_tmpl = _param_to_tmpl($self,$_,$param,$value);
+                my $dot_value_type = ref($value_for_tmpl);
 				# carp("_param_to_tmpl returned '$value_for_tmpl' for '$_', '$param', '$value'");
-                unless (defined($value_type) and length($value_type) and ($value_type eq 'ARRAY' 
+                unless (defined($dot_value_type) and length($dot_value_type) and ($dot_value_type eq 'ARRAY' 
                        or (ref($value_for_tmpl) and (ref($value_for_tmpl) !~ /^(CODE)|(HASH)|(SCALAR)$/) and $value_for_tmpl->isa('ARRAY')))) {
 					(ref($param_map->{$_}) eq 'HTML::Template::VAR') or
 						croak("HTML::Template::param() : attempt to set parameter '$param' with a scalar - parameter is not a TMPL_VAR!");
@@ -364,7 +365,7 @@ sub _param_to_tmpl {
 										([_a-z]\w+)						# ($2) the object in question
 										(?:
 											\.
-											[_a-z]\w+					# method name
+											[_a-z]\w*					# method name
 											$RE{balanced}?				# optional argument list
 										)*
 									)
@@ -437,7 +438,14 @@ sub _param_to_tmpl {
 			
 			croak("Trailing characters '$the_rest' in dot expression '$toke_name'") if $the_rest;
 			# carp("we got $ref. the rest = $the_rest");
-			return ($want_loop and ref($ref) eq 'ARRAY') ? (bless [ map { {$loopmap_name => $_} } @$ref ], 'HTP::Dot::LOOP') : $ref;
+            
+            if($want_loop) { # fixup the array to a conformant data structure
+                my @arr = (reftype($ref) eq 'ARRAY') ? @$ref : ($ref);
+                return [ map { {$loopmap_name => $_} } @arr ];
+             } else {
+                $ref = scalar(@$ref) if ref($ref) eq 'ARRAY'; 
+                return $ref;
+            }
 		}
         # no match. give up. 
         else {

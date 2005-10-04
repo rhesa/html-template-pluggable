@@ -2,10 +2,12 @@ use Test::More;
 use Test::MockObject;
 use Data::Dumper;
 
+use lib 'lib';
 use strict;
 
+my $tests = 12;
 plan tests => 3						# use_ok
-			+ 7						# my tests
+			+ $tests 			    # my tests
 	;
 
 use_ok('HTML::Template::Pluggable');
@@ -49,12 +51,13 @@ $mock->mock( 'nested', sub {
 		return @ret;
 	} );
 
+my $hashref = { loop =>  $mock->arrayref };
 my ($tag, $out);
 
 $tag = q{ <tmpl_var object.name>: <tmpl_loop name="object.that_returns_loopdata(3)"><tmpl_var this.a>, <tmpl_var this.b>. </tmpl_loop> };
 $out = get_output($tag, $mock);
 SKIP: {
-	skip "HTML::Template subclassing bug for tmpl_loop support. See: http://rt.cpan.org/NoAuth/Bug.html?id=14037", 7 if $@;
+	skip "HTML::Template subclassing bug for tmpl_loop support. See: http://rt.cpan.org/NoAuth/Bug.html?id=14037", $tests if $@;
 	like($out, qr/1, 10/, 'Wrapped loops work with implicit "this" mapping');
 
 	$tag = q{ <tmpl_loop name="object.that_returns_loopdata(4) : that"><tmpl_var that.a>, <tmpl_var that.b>. </tmpl_loop> };
@@ -80,11 +83,37 @@ SKIP: {
 	$tag = q{ <tmpl_var object.name> <tmpl_loop name="object.nested(3)"><tmpl_var this.a>, <tmpl_loop this.b>(<tmpl_var this.c>)</tmpl_loop>. </tmpl_loop> };
 	$out = get_output($tag, $mock);
 	like($out, qr/\Q3, (3)(6)(9)./, 'Wrapped nested loops work with arrayrefs and implicit mapping everywhere');
+
+	$tag = q{ <tmpl_loop name="object.loop:item"><tmpl_var item.a>, <tmpl_var item.b>. </tmpl_loop> };
+	$out = get_output($tag, $hashref);
+	like($out, qr/\Q3, 30./, 'simple hashref with an arrayref');
+
+	$tag = q{ <tmpl_if object.loop><tmpl_loop name="object.loop:item"><tmpl_var item.a>, <tmpl_var item.b>. </tmpl_loop></tmpl_if> };
+	$out = get_output($tag, $hashref);
+	like($out, qr/\Q3, 30./, 'simple hashref with an arrayref, which is tested in a tmpl_if');
+
+	$tag = q{ :<tmpl_var object.loop>: <tmpl_loop name="object.loop:item"><tmpl_var item.a>, <tmpl_var item.b>. </tmpl_loop> };
+	$out = get_output($tag, $hashref);
+	like($out, qr/\Q3, 30./, 'simple hashref with an arrayref, which is used as a var');
+
+	$hashref={loop=>[]};
+	$tag = q{ <tmpl_loop name="object.loop:item"><tmpl_var item.a>, <tmpl_var item.b>. </tmpl_loop> };
+	$out = get_output($tag, $hashref);
+	like($out, qr/^  $/, 'simple hashref with an emtpy arrayref');
+	
+	$hashref={loop=>[]};
+	$tag = q{ <tmpl_if object.loop><tmpl_loop name="object.loop:item"><tmpl_var item.a>, <tmpl_var item.b>. </tmpl_loop></tmpl_if> };
+	$out = get_output($tag, $hashref);
+	like($out, qr/^  $/, 'simple hashref with an emtpy arrayref, used in a tmpl_if');
+
+
 }
 
 sub get_output {
 	my ($tag, $data) = @_;
 	my ( $output );
+
+    # diag("");
 	my $t = HTML::Template::Pluggable->new(
 			scalarref	=> \$tag,
 			global_vars	=> 0,
@@ -95,6 +124,7 @@ sub get_output {
 		$output = $t->output;
 	};
 
+     
 	# diag("template tag is $tag");
 	# diag("output is $output");
 	# diag("exception is $@") if $@;
