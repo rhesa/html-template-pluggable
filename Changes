@@ -1,5 +1,16 @@
 Revision history for HTML-Template-Pluggable
 
+0.14    2006-03-27  Rhesa Rozendaal <rhesa@cpan.org>
+        - bugfixes in ::Dot:
+          - switched to using blessed() instead of UNIVERSAL::can as a function.
+            this breaks with using a CGI object for versions older than 3.06,
+            since CGI didn't have a working can() method.
+          - made nested calls to the same object work, so you can now do:
+          
+              <tmpl_var t.greeting(t.name)>
+          
+          Both issues were reported by Dan Horne.
+
 0.13    2005-10-04  Rhesa Rozendaal <rhesa@cpan.org>
         - bug fixes in ::Dot:
           - using obj.loop in a <tmpl_if> or <tmpl_var> now returns the

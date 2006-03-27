@@ -2,7 +2,7 @@ package HTML::Template::Pluggable;
 use base 'HTML::Template';
 use Class::Trigger;
 use vars (qw/$VERSION/);
-$VERSION = '0.13';
+$VERSION = '0.14';
 use warnings;
 use strict;
 use Carp;
@@ -209,7 +209,7 @@ be notified of progress on your bug as I make changes.
 
 =head1 Copyright & License
 
-Copyright 2005 Mark Stosberg, All Rights Reserved.
+Copyright 2006 Mark Stosberg, All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

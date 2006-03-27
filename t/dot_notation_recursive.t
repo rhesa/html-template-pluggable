@@ -9,6 +9,7 @@ my @tests = (
 [q/Formatter.sprintf('%20s', mock.nested(bareword, 'literal1', non.bareword).key)/,	q/ bare value := / ],
 [q/Formatter.sprintf('%20s %4s %7s', bareword, 'literal1', non.bareword)/,	q/ bare value := / ],
 # [q/mock.nested(Formatter.sprintf('%.3f', 3.14159)).key/,	q/ 3.142 / ], ### eeewww. other way around obviously doesn't work, as it needs the param setting reversed.
+
 );
 
 plan tests => 3						# use_ok
@@ -45,9 +46,9 @@ foreach my $test(@tests) {
 	$t->param( mock		 => $mock );
 	$t->param( Formatter => $formatter );
 	$output = $t->output;
+	like( $output, qr/$out/, $pat);
 	# diag("output is $output");
 	# diag("mock is ", $t->param('mock'));
-	like( $output, qr/$out/, $pat);
 }
 
 # vi: filetype=perl

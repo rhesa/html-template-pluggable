@@ -1,7 +1,8 @@
 package HTML::Template::Plugin::Dot;
 use vars qw/$VERSION/;
-$VERSION = '0.97';
+$VERSION = '0.99';
 use strict;
+use Scalar::Util qw/blessed/;
 
 =head1 NAME
 
@@ -138,14 +139,6 @@ for each CD like so:
 =head2 LIMITATIONS
 
 =over 4
-
-=item * TMPL_VARs inside of loops won't work unless a simple patch is applied
-to HTML::Template.
-
-We hope it will be updated with this patch soon. See
-http://rt.cpan.org/NoAuth/Bug.html?id=14037 for details.
-
-Alternately, you can apply the patch to your own copy.  
 
 =item * Casing of parameter names
 
@@ -329,6 +322,7 @@ sub _param_to_tmpl {
 			# followed by an identifier
 
 			my $ref = $param_value;	
+            $self->{param_map_done}{$one} ||= $ref;
 			my $want_loop = ref($self->{param_map}{$toke_name}) eq 'HTML::Template::LOOP';
 			my(@results); # keeps return values from dot operations
 		THE_REST:
@@ -338,12 +332,13 @@ sub _param_to_tmpl {
 						(?:\.|$)				# dot or end of string
 					//xi ) {
 				my ($id, $data) = ($1, $2);
-				if (ref($ref) && UNIVERSAL::can($ref, 'can')) {
+				if (ref($ref) and blessed($ref)) {
 					# carp("$ref is an object, and its ref=", ref($ref), Dumper($ref));
 					if($ref->can($id)) {
 						my @args = ();
+                        # carp "Calling $id on ", ref($ref), " with $data";
 						if($data) {
-							$data =~ s/^\(//; $data =~ s/\)$//;
+							$data =~ s/^\(// and $data =~ s/\)$//;
 							while( $data ) {
 								if ($data =~ s/
 									^\s*
@@ -357,12 +352,13 @@ sub _param_to_tmpl {
 								) {
 									my $m = $1;
 									$m =~ s/^["'`]//; $m =~ s/["'`]$//;
+                                    # carp "found string or numeric argument $m";
 									push @args, $m;
 								}
 								elsif( $data =~ s/
 									^\s*
 									(									# ($1) a sub-expression of the form "object.method(args)"
-										([_a-z]\w+)						# ($2) the object in question
+										([_a-z]\w*)						# ($2) the object in question
 										(?:
 											\.
 											[_a-z]\w*					# method name
@@ -373,7 +369,8 @@ sub _param_to_tmpl {
 									//xi
 								) {
 									my ($m, $o) = ($1, $2); 
-									# carp("found subexpression '$m'");
+									# carp("found subexpression '$m' with '$o'");
+                                    # carp Dumper($self->{param_map}), Dumper($self->{param_map_done});
 									if( exists($self->{param_map}->{$m}) ) {
 										my $prev = $self->param($m);
 										# carp("found '$prev' for '$m' in param_map");
@@ -400,6 +397,8 @@ sub _param_to_tmpl {
 						eval {
 							if($the_rest or !$want_loop) {
 								$ref = $ref->$id(@args);
+                                $one .= ".$id";
+                                $self->{param_map_done}{$one} ||= $ref;
 							} else {
 								@results = $ref->$id(@args);
 							}
@@ -474,8 +473,8 @@ Rhesa Rozendaal, E<lt>rhesa@cpan.orgE<gt>
 
 =head1 Copyright & License
 
- Parts copyright 2005 Mark Stosberg
- Parts copyright 2005 Rhesa Rozendaal
+ Parts copyright 2006 Mark Stosberg
+ Parts copyright 2006 Rhesa Rozendaal
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as perl itself.
