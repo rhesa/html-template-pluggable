@@ -1,5 +1,8 @@
 Revision history for HTML-Template-Pluggable
 
+0.15    2006-03-28  Rhesa Rozendaal <rhesa@cpan.org>
+        - argh! removed dependency on CAP::AutoRunmode from test suite
+
 0.14    2006-03-27  Rhesa Rozendaal <rhesa@cpan.org>
         - bugfixes in ::Dot:
           - switched to using blessed() instead of UNIVERSAL::can as a function.

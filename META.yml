@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: HTML-Template-Pluggable
-version: 0.14
+version: 0.15
 author:
   - Mark Stosberg <mark@summersault.com>
 abstract: Extends HTML::Template with plugin support

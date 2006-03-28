@@ -26,11 +26,14 @@ SKIP:
     use warnings;
     # use CGI qw/start_html/;
     use base qw/CGI::Application/;
-    use CGI::Application::Plugin::AutoRunmode;
     use HTML::Template::Pluggable;
     use HTML::Template::Plugin::Dot;
 
-    sub foo : RunMode {
+    sub setup {
+        shift()->run_modes([ qw/ foo / ]);
+    }
+    
+    sub foo {
         my $self = shift;
         my $t = HTML::Template::Pluggable->new(scalarref => \q{
             <tmpl_var 'c.query.start_html("foo")'>
