@@ -17,6 +17,7 @@ SKIP:
         $ENV{HTTP_HOST} = 'hiero';
         $ENV{CGI_APP_RETURN_ONLY} = 1;
     }
+
     my $t = T2->new;
     $t->start_mode('foo');
     my $out = $t->run;
@@ -24,15 +25,13 @@ SKIP:
 
     package T2;
     use warnings;
-    # use CGI qw/start_html/;
-    use base qw/CGI::Application/;
     use HTML::Template::Pluggable;
     use HTML::Template::Plugin::Dot;
 
-    sub setup {
-        shift()->run_modes([ qw/ foo / ]);
-    }
-    
+    sub new { bless {}, +shift; }
+    sub run { my $self = shift; my $m = $self->{start_mode}; $self->$m(); }
+    sub start_mode { my $self = shift; $self->{start_mode} = shift if @_; $self->{start_mode} }
+    sub query { my $self = shift; $self->{cgi} ||= CGI->new; $self->{cgi}; }
     sub foo {
         my $self = shift;
         my $t = HTML::Template::Pluggable->new(scalarref => \q{

@@ -1,5 +1,8 @@
 Revision history for HTML-Template-Pluggable
 
+0.16    2007-03-28  Rhesa Rozendaal <rhesa@cpan.org>
+        - removed test dependency on CGI::Application
+
 0.15    2006-03-28  Rhesa Rozendaal <rhesa@cpan.org>
         - argh! removed dependency on CAP::AutoRunmode from test suite
 

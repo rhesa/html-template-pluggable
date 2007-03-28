@@ -1,8 +1,27 @@
---- #YAML:1.0
+---
 name: HTML-Template-Pluggable
-version: 0.15
+version: 0.16
 author:
-  - Mark Stosberg <mark@summersault.com>
+  - 'Mark Stosberg <mark@summersault.com>'
 abstract: Extends HTML::Template with plugin support
 license: perl
-generated_by: Module::Build version 0.2611, without YAML.pm
+resources:
+  license: http://dev.perl.org/licenses/
+requires:
+  Class::Trigger: 0
+  HTML::Template: 2.7
+  Regexp::Common: 0
+  Scalar::Util: 0
+  Test::MockObject: 1
+  Test::More: 0
+provides:
+  HTML::Template::Pluggable:
+    file: lib/HTML/Template/Pluggable.pm
+    version: 0.16
+  HTML::Template::Plugin::Dot:
+    file: lib/HTML/Template/Plugin/Dot.pm
+    version: 0.99
+generated_by: Module::Build version 0.2805
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2

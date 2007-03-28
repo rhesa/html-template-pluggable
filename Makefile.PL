@@ -5,6 +5,7 @@ WriteMakefile
           'PL_FILES' => {},
           'INSTALLDIRS' => 'site',
           'NAME' => 'HTML::Template::Pluggable',
+          'EXE_FILES' => [],
           'VERSION_FROM' => 'lib/HTML/Template/Pluggable.pm',
           'PREREQ_PM' => {
                            'Test::More' => 0,
