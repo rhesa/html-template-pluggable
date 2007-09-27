@@ -5,7 +5,7 @@ use Data::Dumper;
 use lib 'lib';
 use strict;
 
-my $tests = 12;
+my $tests = 14;
 plan tests => 3						# use_ok
 			+ $tests 			    # my tests
 	;
@@ -38,6 +38,7 @@ $mock->mock( 'arrayref', sub {
 		$count ||= 5;
 		return [ $self->ar($count) ];
 	} );
+$mock->mock( empty_Loop => sub { return [] } );
 $mock->mock( 'nested', sub {
 		my ($self, $count) = @_;
 		$count ||= 2;
@@ -67,6 +68,14 @@ SKIP: {
 	$tag = q{ <tmpl_loop name="object.arrayref : d"><tmpl_var d.a>, <tmpl_var d.b>. </tmpl_loop> };
 	$out = get_output($tag, $mock);
 	like($out, qr/1, 10/, 'Wrapped loops work with arrayrefs');
+
+	$tag = q{ no <tmpl_loop name="object.empty_Loop"><tmpl_var this.a>, <tmpl_var this.b>. </tmpl_loop> data };
+	$out = get_output($tag, $mock);
+	like($out, qr/no\s+data/, 'Wrapped loops work with no data');
+
+	$tag = q{ <tmpl_var object.name> no <tmpl_loop name="non_object.empty_loop"><tmpl_var a>, <tmpl_var b>. </tmpl_loop> data };
+	$out = get_output($tag, $mock, 'non_object.empty_loop' => []);
+	like($out, qr/no\s+data/, 'Wrapped loops work with no object and no data');
 
 	$tag = q{ <tmpl_loop name="object.nested(3) : outer"><tmpl_var outer.a>, <tmpl_loop outer.b>(<tmpl_var this.c>)</tmpl_loop>. </tmpl_loop> };
 	$out = get_output($tag, $mock);
@@ -110,24 +119,25 @@ SKIP: {
 }
 
 sub get_output {
-	my ($tag, $data) = @_;
+	my ($tag, @data) = @_;
 	my ( $output );
 
     # diag("");
 	my $t = HTML::Template::Pluggable->new(
 			scalarref	=> \$tag,
 			global_vars	=> 0,
-			debug		=> 0
+			debug		=> 0,
+            die_on_bad_params => 1,
 		);
 	eval {
-		$t->param( object => $data );
+		$t->param( object => @data );
 		$output = $t->output;
 	};
 
      
-	# diag("template tag is $tag");
-	# diag("output is $output");
-	# diag("exception is $@") if $@;
+	#diag("template tag is $tag");
+	#diag("output is $output");
+	#diag("exception is $@") if $@;
 	return $output;
 }
 

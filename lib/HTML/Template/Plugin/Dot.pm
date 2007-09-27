@@ -1,175 +1,8 @@
 package HTML::Template::Plugin::Dot;
 use vars qw/$VERSION/;
-$VERSION = '0.99';
+$VERSION = '1.00';
 use strict;
 use Scalar::Util qw/blessed/;
-
-=head1 NAME
-
-HTML::Template::Plugin::Dot - Add Magic Dot notation to HTML::Template
-
-=head1 SYNOPSIS 
-
- use HTML::Template::Pluggable;
- use HTML::Template::Plugin::Dot;
-
- my $t = HTML::Template::Pluggable->new(...);
-
-Now you can use chained accessor calls and nested hashrefs as params, and access
-them with a dot notation. You can even pass arguments to the methods. 
-
-For example, in your code: 
-
-  $t->param( my_complex_struct => $struct ); 
-
-And then in your template you can reference specific values in the structure:
-
-  my_complex_struct.key.obj.accessor('hash')
-  my_complex_struct.other_key
-
-=head1 DESCRIPTION
-
-By adding support for this dot notation to L<HTML::Template>, the programmers'
-job of sending data to the template is easier, and designers have easier access
-to more data to display in the template, without learning any more tag syntax. 
-
-=head2 EXAMPLES
-
-=head2 Class::DBI integration
-
-L<Class::DBI> accessors can be used in the template.  If the accessor is never
-called in the template, that data doesn't have to be loaded. 
-
-In the code:
-
-  $t->param ( my_row => $class_dbi_obj );
-
-In the template:
-
-  my_row.last_name
-
-This extends to related objects or inflated columns (commonly used for date
-fields). Here's an example with a date column that's inflated into a DateTime
-object:
-
-  my_row.my_date.mdy('/')
-  my_row.my_date.strftime('%D')
-
-Of course, if date formatting strings look scary to the designer, you can keep
-them in the application, or even a database layer to insure consistency in all
-presentations.
-
-Here's an example with related objects. Suppose you have a Customer object, that
-has_a BillingAddress object attached to it. Then you could say something like
-this:
-
-  <tmpl_if customer.billing_address>
-    <tmpl_var customer.billing_address.street>
-    <tmpl_var customer.billing_address.city>
-    ...
-  </tmpl_if>
-
-=head2 More complex uses
-
-The dot notation allows you to pass arguments to method calls (as in the 
-C<my_date.dmy('/')> example above). In fact, you can pass other objects in the 
-template as well, and this enables more complex usage.
-Imagine we had a (fictional) Formatter object which could perform some basic
-string formatting functions. This could be used in e.g. currencies, or dates.
-
-In your code:
-
-  $t->param( Formatter => Formatter->new,
-             order	   => $order_obj     );
-
-In your template:
-
-  Amount: <tmpl_var Formatter.format_currency('US',order.total_amount)>
-
-(hint: see L<Number::Format>)
-
-This even extends to references to plain tmpl_vars in your template:
-
- $t->param( Formatter => Formatter->new,
-            plain     => 'Jane'         );
-
- <tmpl_var Formatter.reverse(plain)> is
- <tmpl_var plain> backwards
-
-=head2 TMPL_LOOPs
-
-As of version 0.94, the dot notation is also supported on TMPL_LOOP tags (but
-see the L</LIMITATIONS> section).
-
-Given an object method (or a hash key) that returns an array or a reference
-to an array, we will unwrap that array for use in the loop. Individual array
-elements are mapped to a hash C<< { 'this' => $elt } >>, so that you can refer
-to them in TMPL_VARs as "this.something".
-
-An example might help. Let's use the canonical Class::DBI example for our data.
-Suppose you have an $artist object, which has_many CDs. You can now pass just
-the $artist object, and handle the loops in the template:
-
-  $t->param( artist => $artist );
-
-The template:
-
-  <tmpl_var artist.name> has released these albums:
-  <tmpl_loop artist.cds>
-    <tmpl_var this.title> - <tmpl_var this.year>
-  </tmpl_loop>
-
-As you can see, each element from the artist.cds() array is called "this" by
-default. You can supply your own name by appending ': name' like this:
-
- <tmpl_loop artist.cds:cd>
-   <tmpl_var cd.title>
-   ...
-
-That's not the end of it! You can even nest these loops, displaying the Tracks
-for each CD like so:
-
- <tmpl_loop artist.cds:cd>
-   <tmpl_var cd.title>
-   <tmpl_loop cd.tracks:track>
-     - <tmpl_var track.title> ( <tmpl_var track.tracktime> )
-   </tmpl_loop>
- </tmpl_loop>
-
-=head2 LIMITATIONS
-
-=over 4
-
-=item * Casing of parameter names
-
-Casing of parameter names follows the option C<case_sensitive> of
-HTML::Template. If you do not use that option, all parameter names are 
-converted to lower case. I suggest turning this option on to avoid confusion.
-
-=item * Quotes and spaces
-
-Because of the way HTML::Template parses parameter names (which follows the
-rules of HTML attributes), you have to be careful when your expressions contain
-spaces or quote characters. You can say
-C<< <tmpl_var something.without.spaces> >>, but not
-C<< <tmpl_var something with spaces> >>. You can use single or double quotes
-around your entire expression, and then use the other one inside:
-C<< <tmpl_var name="some.method('with arguments')"> >> This is the recommended
-way to write your expressions.
-
-(Note: within expressions, the characters in C<< [`'"] >> are recognised as
-quote characters. So if you need to pass literal quotes to a method, you could
-do it like this: C<< <tmpl_var name='some.method(`need a " here`)'> >>. )
-
-=back
-
-=head2 PERFORMANCE
-
-No attempt to even measure performance has been made. For now the focus is on
-usability and stability. If you carry out benchmarks, or have suggestions for
-performance improvements, be sure to let us know!
-
-=cut
 
 use Carp; 
 use Data::Dumper;
@@ -386,7 +219,7 @@ sub _param_to_tmpl {
 									}
 								}
 								else {
-									local $,= ', ';
+									# local $,= ', ';
 									# carp("Parsing is in some weird state. args so far are '@args'. data = '$data'. id='$id'");
 									last;
 								}
@@ -396,14 +229,24 @@ sub _param_to_tmpl {
 						# carp("calling '$id' on '$ref' with '@args'");
 						eval {
 							if($the_rest or !$want_loop) {
-								$ref = $ref->$id(@args);
                                 $one .= ".$id";
+								$ref = $ref->$id(@args);
                                 $self->{param_map_done}{$one} ||= $ref;
 							} else {
 								@results = $ref->$id(@args);
 							}
-						} or $the_rest='', last THE_REST;
-						
+						};
+                        if($@) { 
+                            if( $self->{options}{die_on_bad_params} ) {
+                                croak("Error invoking $ref->$id(@args): $@");
+                            } else {
+                                carp("Error invoking $ref->$id(@args): $@");
+                                @results = ();
+                                $ref = $self->{param_map_done}{$one} = '';
+                                $the_rest = '';
+                                last THE_REST;
+                            }
+                        }
 					}
 					elsif(reftype($ref) eq'HASH') {
 						croak("Can't access hash key '$id' with a parameter list! ($data)") if $data;
@@ -411,7 +254,7 @@ sub _param_to_tmpl {
 						if($the_rest or !$want_loop) {
 							$ref = exists( $ref->{$id} ) ? $ref->{$id} : undef;
 						} else {
-							@results = exists( $ref->{$id} ) ? $ref->{$id} : undef;
+							@results = exists( $ref->{$id} ) ? $ref->{$id} : ();
 						}
 					}
 					else {
@@ -423,7 +266,7 @@ sub _param_to_tmpl {
 					if($the_rest or !$want_loop) {
 						$ref = exists( $ref->{$id} ) ? $ref->{$id} : undef;
 					} else {
-						@results = exists( $ref->{$id} ) ? $ref->{$id} : undef;
+						@results = exists( $ref->{$id} ) ? $ref->{$id} : ();
 					}
 				}
 
@@ -431,7 +274,7 @@ sub _param_to_tmpl {
 
 			}
 			
-			unless($the_rest or !$want_loop) {
+			if(!$the_rest and $want_loop) {
 				$ref = ($#results==0 and ref($results[0]) eq 'ARRAY') ? $results[0] : \@results;
 			}
 			
@@ -460,6 +303,174 @@ sub _param_to_tmpl {
 
 }
 
+1;
+
+__END__
+=head1 NAME
+
+HTML::Template::Plugin::Dot - Add Magic Dot notation to HTML::Template
+
+=head1 SYNOPSIS 
+
+  use HTML::Template::Pluggable;
+  use HTML::Template::Plugin::Dot;
+
+  my $t = HTML::Template::Pluggable->new(...);
+
+Now you can use chained accessor calls and nested hashrefs as params, and access
+them with a dot notation. You can even pass arguments to the methods. 
+
+For example, in your code: 
+
+  $t->param( my_complex_struct => $struct ); 
+
+And then in your template you can reference specific values in the structure:
+
+  my_complex_struct.key.obj.accessor('hash')
+  my_complex_struct.other_key
+
+=head1 DESCRIPTION
+
+By adding support for this dot notation to L<HTML::Template>, the programmers'
+job of sending data to the template is easier, and designers have easier access
+to more data to display in the template, without learning any more tag syntax. 
+
+=head2 EXAMPLES
+
+=head2 Class::DBI integration
+
+L<Class::DBI> accessors can be used in the template.  If the accessor is never
+called in the template, that data doesn't have to be loaded. 
+
+In the code:
+
+  $t->param ( my_row => $class_dbi_obj );
+
+In the template:
+
+  my_row.last_name
+
+This extends to related objects or inflated columns (commonly used for date
+fields). Here's an example with a date column that's inflated into a DateTime
+object:
+
+  my_row.my_date.mdy('/')
+  my_row.my_date.strftime('%D')
+
+Of course, if date formatting strings look scary to the designer, you can keep
+them in the application, or even a database layer to insure consistency in all
+presentations.
+
+Here's an example with related objects. Suppose you have a Customer object, that
+has_a BillingAddress object attached to it. Then you could say something like
+this:
+
+  <tmpl_if customer.billing_address>
+    <tmpl_var customer.billing_address.street>
+    <tmpl_var customer.billing_address.city>
+    ...
+  </tmpl_if>
+
+=head2 More complex uses
+
+The dot notation allows you to pass arguments to method calls (as in the 
+C<my_date.dmy('/')> example above). In fact, you can pass other objects in the 
+template as well, and this enables more complex usage.
+Imagine we had a (fictional) Formatter object which could perform some basic
+string formatting functions. This could be used in e.g. currencies, or dates.
+
+In your code:
+
+  $t->param( Formatter => Formatter->new,
+             order	   => $order_obj     );
+
+In your template:
+
+  Amount: <tmpl_var Formatter.format_currency('US',order.total_amount)>
+
+(hint: see L<Number::Format>)
+
+This even extends to references to plain tmpl_vars in your template:
+
+  $t->param( Formatter => Formatter->new,
+             plain     => 'Jane'         );
+
+  <tmpl_var Formatter.reverse(plain)> is
+  <tmpl_var plain> backwards
+
+=head2 TMPL_LOOPs
+
+As of version 0.94, the dot notation is also supported on TMPL_LOOP tags (but
+see the L</LIMITATIONS> section).
+
+Given an object method (or a hash key) that returns an array or a reference
+to an array, we will unwrap that array for use in the loop. Individual array
+elements are mapped to a hash C<< { 'this' => $elt } >>, so that you can refer
+to them in TMPL_VARs as "this.something".
+
+An example might help. Let's use the canonical Class::DBI example for our data.
+Suppose you have an $artist object, which has_many CDs. You can now pass just
+the $artist object, and handle the loops in the template:
+
+  $t->param( artist => $artist );
+
+The template:
+
+  <tmpl_var artist.name> has released these albums:
+  <tmpl_loop artist.cds>
+    <tmpl_var this.title> - <tmpl_var this.year>
+  </tmpl_loop>
+
+As you can see, each element from the artist.cds() array is called "this" by
+default. You can supply your own name by appending ': name' like this:
+
+  <tmpl_loop artist.cds:cd>
+    <tmpl_var cd.title>
+    ...
+
+That's not the end of it! You can even nest these loops, displaying the Tracks
+for each CD like so:
+
+  <tmpl_loop artist.cds:cd>
+    <tmpl_var cd.title>
+    <tmpl_loop cd.tracks:track>
+      - <tmpl_var track.title> ( <tmpl_var track.tracktime> )
+    </tmpl_loop>
+  </tmpl_loop>
+
+=head2 LIMITATIONS
+
+=over 4
+
+=item * Casing of parameter names
+
+Casing of parameter names follows the option C<case_sensitive> of
+HTML::Template. If you do not use that option, all parameter names are 
+converted to lower case. I suggest turning this option on to avoid confusion.
+
+=item * Quotes and spaces
+
+Because of the way HTML::Template parses parameter names (which follows the
+rules of HTML attributes), you have to be careful when your expressions contain
+spaces or quote characters. You can say
+C<< <tmpl_var something.without.spaces> >>, but not
+C<< <tmpl_var something with spaces> >>. You can use single or double quotes
+around your entire expression, and then use the other one inside:
+C<< <tmpl_var name="some.method('with arguments')"> >> This is the recommended
+way to write your expressions.
+
+(Note: within expressions, the characters in C<< [`'"] >> are recognised as
+quote characters. So if you need to pass literal quotes to a method, you could
+do it like this: C<< <tmpl_var name='some.method(`need a " here`)'> >>. )
+
+=back
+
+=head2 PERFORMANCE
+
+No attempt to even measure performance has been made. For now the focus is on
+usability and stability. If you carry out benchmarks, or have suggestions for
+performance improvements, be sure to let us know!
+
 =head1 CONTRIBUTING
 
 Patches, questions and feedback are welcome. This project is managed using
@@ -481,4 +492,3 @@ under the same terms as perl itself.
 
 =cut
 
-1;

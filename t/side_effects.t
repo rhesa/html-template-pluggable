@@ -4,22 +4,60 @@ use Test::MockObject;
 use strict;
 
 plan tests => 3						# use_ok
-			+ 3						# hash keys, dying methods
+			+ 12					# hash keys, dying methods
 	;
 
-use_ok('HTML::Template::Pluggable');
-use_ok('HTML::Template::Plugin::Dot');
-use_ok('Test::MockObject');
+use_ok 'HTML::Template::Pluggable';
+use_ok 'HTML::Template::Plugin::Dot';
+use_ok 'Test::MockObject';
 
 my $mock = Test::MockObject->new();
-$mock->mock( 'method_that_dies', sub { die "horribly..." } );
+$mock->mock( 'method_that_dies' => sub { die "horribly..." } );
+$mock->mock( 'nested'           => sub { $_[0] } );
 
 # methods that die
-	get_output(
-		'<tmpl_var name="object.method_that_dies">',
-		$mock,
-	);
-ok($@ eq '', "method calls die silently");
+{
+    my $ex = get_output(
+            '<tmpl_var name="object.method_that_dies">',
+            $mock,
+            { die_on_bad_params => 1 },
+        );
+    like $@, qr/horribly... at /, "method calls die loudly with die_on_bad_params off";
+    unlike $ex, qr/0x/, "exception doesn't leave a stringified object behind";
+}
+
+{
+    my $ex = get_output(
+            '<tmpl_var name="object.nested.method_that_dies">',
+            $mock,
+            { die_on_bad_params => 1 },
+        );
+    like $@, qr/horribly... at /, "nested method calls die loudly with die_on_bad_params off";
+    unlike $ex, qr/0x/, "exception doesn't leave a stringified object behind";
+}
+
+{
+    my $warning;
+    local $SIG{__WARN__} = sub { $warning = shift; };
+
+    my $ex = get_output(
+            '<tmpl_var name="object.method_that_dies">',
+            $mock,
+            { die_on_bad_params => 0 },
+        );
+    is $@,  '', "method calls fail silently with die_on_bad_params off";
+    is $ex, '', "exception doesn't leave a stringified object behind";
+    like $warning, qr/horribly/, 'but emits a warning';
+
+    $ex = get_output(
+            '<tmpl_var name="object.nested.method_that_dies">',
+            $mock,
+            { die_on_bad_params => 0 },
+        );
+    is $@,  '', "nested method calls fail silently with die_on_bad_params off";
+    is $ex, '', "exception doesn't leave a stringified object behind";
+    like $warning, qr/horribly/, 'but emits a warning';
+}
 
 # accessing non-existent hash keys
 	my %in = ( a => 1, b => 2 );
@@ -39,11 +77,12 @@ ok(!exists($mock->{new_key}), 'No side effects on object properties');
 
 
 sub get_output {
-	my ($tag, $data) = @_;
-	my ( $output );
+	my ($tag, $data, $params) = @_;
+	my $output = '';
 	my $t = HTML::Template::Pluggable->new(
 			scalarref => \$tag,
-			debug => 0
+			debug => 0,
+            %$params,
 		);
 	eval {
 		$t->param( object => $data );

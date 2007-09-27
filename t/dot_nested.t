@@ -34,13 +34,12 @@ my $text = '<tmpl_var name="t.greeting(t.name())">';
 
 my $test = T1->new();
 $test->name('bob');
-
+is "hello bob", $test->greeting('bob');
 eval {
-my $template = HTML::Template::Pluggable->new(scalarref => \$text);
-$template->param('t' => $test);
-
-my $out =  $template->output;
-is($out, T1->greeting("bob"));
+    my $template = HTML::Template::Pluggable->new(scalarref => \$text);
+    $template->param('t' => $test);
+    my $out = $template->output;
+    is($out, T1->greeting("bob"));
 } or warn $@;
 
 __END__

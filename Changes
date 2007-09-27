@@ -1,5 +1,11 @@
 Revision history for HTML-Template-Pluggable
 
+0.17    2007-05-15  Rhesa Rozendaal <rhesa@cpan.org>
+        - ::Dot now handles exceptions on method calls differently:
+        * if the option die_on_bad_params is on, it will rethrow the exception
+        * if die_on_bad_params is off, it will emit a warning and produce no
+          output for that param
+
 0.16    2007-03-28  Rhesa Rozendaal <rhesa@cpan.org>
         - removed test dependency on CGI::Application
 
