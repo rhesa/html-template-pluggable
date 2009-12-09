@@ -14,6 +14,8 @@ our $RE_balanced  = RE_balanced();
 our $RE_delimited = RE_delimited(-delim=>q{'"`});
 our $RE_num_real  = RE_num_real();
 
+use constant DEBUG => 0;
+
 sub import {
         # my $caller = scalar(caller);
         HTML::Template::Pluggable->add_trigger('middle_param', \&_dot_notation);
@@ -25,14 +27,20 @@ sub _dot_notation {
     my $options = $self->{options};
     my $param_map = $self->{param_map};
 
-    # carp("dot_notation called for $_[0]");
-    # carp("param map: ", Dumper($param_map));
     # @_ has already been setup for us by the time we're called.
 
+    my %input;
     for (my $x = 0; $x <= $#_; $x += 2) {
         my $param = $options->{case_sensitive} ? $_[$x] : lc $_[$x];
         my $value = $_[($x + 1)];
+        $input{$param} = $value;
+    }
 
+    DEBUG and carp("dot_notation called for $_[0]");
+    DEBUG and carp("param map: ", Dumper($param_map));
+    DEBUG and carp("input: ", Dumper(\%input));
+
+    while (my ($param, $value) = each %input) {
         # necessary to cooperate with plugin system
         next if ($self->{param_map_done}{$param} and not $self->{num_vars_left_in_loop});
 
@@ -44,10 +52,9 @@ sub _dot_notation {
         my $value_type = ref($value);
         if(@dot_matches) {
             for my $dot_match (@dot_matches) {
-                # carp("calling _param_to_tmpl for $dot_match, $param, $value");
-                my $value_for_tmpl = _param_to_tmpl($self,$dot_match,$param,$value);
+                my $value_for_tmpl = _param_to_tmpl($self,$dot_match,$param,$value, \%input);
                 my $dot_value_type = ref($value_for_tmpl);
-                # carp("_param_to_tmpl returned '$value_for_tmpl' for '$dot_match', '$param', '$value'");
+
                 unless (defined($dot_value_type) and length($dot_value_type) and ($dot_value_type eq 'ARRAY'
                        or (ref($value_for_tmpl) and (ref($value_for_tmpl) !~ /^(CODE)|(HASH)|(SCALAR)$/) and $value_for_tmpl->isa('ARRAY')))) {
                     (ref($param_map->{$dot_match}) eq 'HTML::Template::VAR') or
@@ -125,7 +132,7 @@ sub _exists_in_tmpl {
 # =cut
 
 sub _param_to_tmpl {
-    my ($self,$token_name,$param_name,$param_value) = @_;
+    my ($self, $token_name, $param_name, $param_value, $input) = @_;
 
     # This clause may not be needed because the non-dot-notation
     # cases are handled elsewhere.
@@ -135,11 +142,8 @@ sub _param_to_tmpl {
 
     my ($one, $the_rest) = split /\./, $token_name, 2;
 
-    length $the_rest
-        or return undef;
-
-    $one eq $param_name
-        or return undef;
+    length $the_rest    or return undef;
+    $one eq $param_name or return undef;
 
     my $loopmap_name = 'this'; # default for mapping array elements for loop vars
     $loopmap_name = $1 if $the_rest =~ s/\s*:\s*([_a-z]\w*)\s*$//;
@@ -169,20 +173,18 @@ sub _param_to_tmpl {
     my $want_loop = ref($self->{param_map}{$token_name}) eq 'HTML::Template::LOOP';
     my(@results); # keeps return values from dot operations
 THE_REST:
-    while( $the_rest =~ s/^
+    while ($the_rest =~ s/^
                 ([_a-z]\w*)             # an identifier
                 ($RE_balanced)?         # optional param list
                 (?:\.|$)                # dot or end of string
             //xi ) {
         my ($id, $data) = ($1, $2);
         if (blessed($ref)) {
-            # carp("$ref is an object, and its ref=", ref($ref), Dumper($ref));
-            if($ref->can($id)) {
+            if ($ref->can($id)) {
                 my @args = ();
-                # carp "Calling $id on ", ref($ref), " with $data";
-                if($data) {
+                if ($data) {
                     $data =~ s/^\(// and $data =~ s/\)$//;
-                    while( $data ) {
+                    while ($data) {
                         if ($data =~ s/
                             ^\s*
                             (
@@ -195,10 +197,9 @@ THE_REST:
                         ) {
                             my $m = $1;
                             $m =~ s/^["'`]//; $m =~ s/["'`]$//;
-                            # carp "found string or numeric argument $m";
                             push @args, $m;
                         }
-                        elsif( $data =~ s/
+                        elsif ($data =~ s/
                             ^\s*
                             (                                   # ($1) a sub-expression of the form "object.method(args)"
                                 ([_a-z]\w*)                     # ($2) the object in question
@@ -212,16 +213,22 @@ THE_REST:
                             //xi
                         ) {
                             my ($m, $o) = ($1, $2);
-                            # carp("found subexpression '$m' with '$o'");
-                            # carp Dumper($self->{param_map}), Dumper($self->{param_map_done});
-                            if( exists($self->{param_map}->{$m}) ) {
-                                my $prev = $self->param($m);
-                                # carp("found '$prev' for '$m' in param_map");
+                            DEBUG and carp("found subexpression '$m' with '$o'");
+                            DEBUG and carp Dumper($self->{param_map}), Dumper($self->{param_map_done});
+                            if (exists($self->{param_map}{$m})) {
+                                my $prev = exists $input->{$m} ? $input->{$m} : $self->param($m);
+                                DEBUG and carp("found '$prev' for '$m' in param_map");
                                 push @args, $prev;
                             }
-                            elsif( exists($self->{param_map_done}{$o}) ) {
-                                my $prev = _param_to_tmpl($self, $m, $o, $self->{param_map_done}{$o});
-                                # carp("found '$prev' for '$o' in param_map_done");
+                            elsif (exists($self->{param_map_done}{$o})) {
+                                my $prev = _param_to_tmpl($self, $m, $o, $self->{param_map_done}{$o}, $input);
+                                DEBUG and carp("found '$prev' for '$o' in param_map_done");
+                                push @args, $prev;
+                            }
+                            elsif (exists($input->{$o})) {
+                                $self->{param_map}{$o} = HTML::Template::VAR->new();
+                                my $prev = _param_to_tmpl($self, $m, $o, $input->{$o}, $input);
+                                DEBUG and carp("found '$prev' through recursion");
                                 push @args, $prev;
                             }
                             else {
@@ -229,14 +236,11 @@ THE_REST:
                             }
                         }
                         else {
-                            # local $,= ', ';
-                            # carp("Parsing is in some weird state. args so far are '@args'. data = '$data'. id='$id'");
                             last;
                         }
                     }
                     croak("Bare word '$data' not allowed in argument list to '$id' in dot expression '$token_name'") if $data;
                 }
-                # carp("calling '$id' on '$ref' with '@args'");
                 eval {
                     if($the_rest or !$want_loop) {
                         $one .= ".$id";
@@ -272,7 +276,6 @@ THE_REST:
             }
         }
         elsif(ref($ref) eq 'HASH') {
-            # carp("accessing key $id on $ref");
             if($the_rest or !$want_loop) {
                 $ref = exists( $ref->{$id} ) ? $ref->{$id} : undef;
             } else {
