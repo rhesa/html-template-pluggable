@@ -1,6 +1,6 @@
 package HTML::Template::Plugin::Dot;
 use vars qw/$VERSION/;
-$VERSION = '1.01';
+$VERSION = '1.02';
 use strict;
 
 use Carp;
@@ -355,7 +355,8 @@ object:
 
 Of course, if date formatting strings look scary to the designer, you can keep
 them in the application, or even a database layer to insure consistency in all
-presentations.
+presentations. (Note: for the latter example to work correctly, you should set
+the option "case_sensitive" to a true value.)
 
 Here's an example with related objects. Suppose you have a Customer object, that
 has_a BillingAddress object attached to it. Then you could say something like
@@ -393,6 +394,28 @@ This even extends to references to plain tmpl_vars in your template:
 
   <tmpl_var Formatter.reverse(plain)> is
   <tmpl_var plain> backwards
+
+Note: for "nested" parameters to work correctly, you should supply both params
+at the same time:
+
+  # for this template snippet,
+  <tmpl_var o1.m1(o2.m2)>
+
+  # this works
+  $t->param( o1 => $o1, o2 => $o2);
+  
+  # but this doesn't
+  $t->param( o1 => $o1 );
+  $t->param( o2 => $o2 );
+  # and neither would swapping the two lines.
+
+  # if your template has another, separate reference to the inner param,
+  <tmpl_var o2.m2>
+  <tmpl_var o1.m1(o2.m2)>
+  
+  # then it works, provided you specify o2 before o1
+  $t->param( o2 => $o2 );
+  $t->param( o1 => $o1 );
 
 =head2 TMPL_LOOPs
 
