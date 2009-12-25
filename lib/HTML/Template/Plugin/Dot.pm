@@ -180,7 +180,7 @@ THE_REST:
             //xi ) {
         my ($id, $data) = ($1, $2);
         if (blessed($ref)) {
-            if ($ref->can($id)) {
+            if ($ref->can($id) or $ref->can('AUTOLOAD')) {
                 my @args = ();
                 if ($data) {
                     $data =~ s/^\(// and $data =~ s/\)$//;
