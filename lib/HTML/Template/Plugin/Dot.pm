@@ -1,6 +1,6 @@
 package HTML::Template::Plugin::Dot;
 use vars qw/$VERSION/;
-$VERSION = '1.02';
+$VERSION = '1.03';
 use strict;
 
 use Carp;
@@ -180,7 +180,7 @@ THE_REST:
             //xi ) {
         my ($id, $data) = ($1, $2);
         if (blessed($ref)) {
-            if ($ref->can($id) or $ref->can('AUTOLOAD')) {
+            if ($ref->can($id)) { # or $ref->can('AUTOLOAD')) {
                 my @args = ();
                 if ($data) {
                     $data =~ s/^\(// and $data =~ s/\)$//;

@@ -1,5 +1,8 @@
 Revision history for HTML-Template-Pluggable
 
+0.20    2022-05-03  Rhesa Rozendaal <rhesa@cpan.org>
+        * add prereq for CGI since this is no longer bundled
+          with perl core
 0.18    2009-12-26  Rhesa Rozendaal <rhesa@cpan.org>
         * fixed RT #40714 to the extent that H::T allows
         * fixed RT #49123 by checking can('AUTOLOAD')
