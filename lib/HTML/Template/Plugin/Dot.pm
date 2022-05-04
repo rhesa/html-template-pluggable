@@ -1,6 +1,6 @@
 package HTML::Template::Plugin::Dot;
 use vars qw/$VERSION/;
-$VERSION = '1.03';
+$VERSION = '1.04';
 use strict;
 
 use Carp;
