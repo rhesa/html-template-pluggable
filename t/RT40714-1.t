@@ -5,8 +5,8 @@ use Carp 'croak';
 
 sub render {
     my( $template, %vars ) = @_;
-     
-    my $t = new HTML::Template::Pluggable(
+
+    my $t = HTML::Template::Pluggable->new(
         scalarref => \$template
     );
     eval { $t->param( %vars ) };
@@ -18,32 +18,32 @@ my $out;
 
 $out = render( 
     "<tmpl_var testobj.attribute>",
-    testobj => new testclass()
+    testobj => testclass->new()
 );
 is( $out, 'attribute_value' );
 
 $out = render( 
     "<tmpl_var testobj.hello>",
-    testobj => new testclass()
+    testobj => testclass->new()
 );
 is( $out, 'hello' );
 
 $out = render( 
     "<tmpl_var testobj.echo('1')>",
-    testobj => new testclass()
+    testobj => testclass->new()
 );
 is( $out, '1' );
 
 $out = render( 
     "<tmpl_var testobj.echo(somevar)>",
-    testobj => new testclass(),
+    testobj => testclass->new(),
     somevar => 'somevalue4'
 );
 is( $out, 'somevalue4' );
 
 $out = render( 
     "<tmpl_var name=\"testobj.test(somevar)\">",
-    testobj => new testclass(),
+    testobj => testclass->new(),
     somevar => 'somevalue5'
 );
 # contribution expected 'somevalue5', but since test() isn't
@@ -52,14 +52,14 @@ is( $out, '' );
 
 $out = render( 
     "<tmpl_var name='somevar'><tmpl_var testobj.echo(somevar)>",
-    testobj => new testclass(),
+    testobj => testclass->new(),
     somevar => 'somevalue'
 );
 is( $out, 'somevaluesomevalue' );
 
 $out = render( 
     "<tmpl_var name='somevar'>",
-    testobj => new testclass(),
+    testobj => testclass->new(),
     somevar => 'somevalue'
 );
 is( $out, 'somevalue' );

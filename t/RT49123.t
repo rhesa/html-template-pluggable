@@ -27,6 +27,8 @@ my $obj = My::Auto->new;
 my $x = render(q{<tmpl_var auto.foo>}, auto => $obj);
 is $x, 'foo', 'can("foo")';
 
+is $obj->quux, "bar", "object can autoload";
+
 my $y = render(q{<tmpl_var auto.quux>}, auto => $obj);
 is $y, 'bar', 'can("AUTOLOAD")';
 
