@@ -64,7 +64,7 @@ sub _dot_notation {
                 else {
                     (ref($param_map->{$dot_match}) eq 'HTML::Template::LOOP') or
                         croak("HTML::Template::param() : attempt to set parameter '$param' with an array ref - parameter is not a TMPL_LOOP!");
-                    $param_map->{$dot_match}[HTML::Template::LOOP::PARAM_SET] = $value_for_tmpl;
+                    $param_map->{$dot_match}[HTML::Template::LOOP::PARAM_SET()] = $value_for_tmpl;
                 }
 
                 # Necessary for plugin system compatibility
@@ -79,7 +79,7 @@ sub _dot_notation {
                 croak("HTML::Template::param() : attempt to set parameter '$param' with an array ref - parameter is not a TMPL_LOOP!");
 
             #  TODO: Use constant names instead of "0"
-            $self->{num_vars_left_in_loop} += keys %{ $param_map->{$param}[HTML::Template::LOOP::TEMPLATE_HASH]{'0'}{'param_map'} } if exists $param_map->{$param}[HTML::Template::LOOP::TEMPLATE_HASH]{'0'};
+            $self->{num_vars_left_in_loop} += keys %{ $param_map->{$param}[HTML::Template::LOOP::TEMPLATE_HASH()]{'0'}{'param_map'} } if exists $param_map->{$param}[HTML::Template::LOOP::TEMPLATE_HASH()]{'0'};
 
         }
         else {
