@@ -47,6 +47,7 @@ sub _dot_notation {
         my ($exists,@dot_matches) = _exists_in_tmpl($self, $param);
         # We don't have to worry about "die on bad params", because that will be handled
         # by HTML::Template's param().
+        DEBUG and carp("exists: $exists, dot matches: @dot_matches, param: $param");
         next unless $exists;
 
         my $value_type = ref($value);
@@ -87,7 +88,9 @@ sub _dot_notation {
                 croak("HTML::Template::param() : attempt to set parameter '$param' with a scalar - parameter is not a TMPL_VAR!");
             # intetionally /don't/ set the values for non-dot notation  params,
             # and don't mark them as done, just that they exist.
-            $self->{num_vars_left_in_loop} -= 1;
+            # but only if there actually are dot params in the template. if there aren't,
+            # this property needs to stay undefined (to fix test 6 in t/RT40714-1.t).
+            $self->{num_vars_left_in_loop} -= 1 if exists $self->{num_vars_left_in_loop};
         }
     }
 }
