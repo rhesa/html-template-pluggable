@@ -16,32 +16,32 @@ sub render {
 
 my $out;
 
-$out = render( 
+$out = render(
     "<tmpl_var testobj.attribute>",
     testobj => testclass->new()
 );
 is( $out, 'attribute_value' );
 
-$out = render( 
+$out = render(
     "<tmpl_var testobj.hello>",
     testobj => testclass->new()
 );
 is( $out, 'hello' );
 
-$out = render( 
+$out = render(
     "<tmpl_var testobj.echo('1')>",
     testobj => testclass->new()
 );
 is( $out, '1' );
 
-$out = render( 
+$out = render(
     "<tmpl_var testobj.echo(somevar)>",
     testobj => testclass->new(),
     somevar => 'somevalue4'
 );
 is( $out, 'somevalue4' );
 
-$out = render( 
+$out = render(
     "<tmpl_var name=\"testobj.test(somevar)\">",
     testobj => testclass->new(),
     somevar => 'somevalue5'
@@ -50,19 +50,19 @@ $out = render(
 # a method of testclass, this should return nothing.
 is( $out, '' );
 
-$out = render( 
+$out = render(
     "<tmpl_var name='somevar'><tmpl_var testobj.echo(somevar)>",
     testobj => testclass->new(),
     somevar => 'somevalue'
 );
 is( $out, 'somevaluesomevalue' );
 
-$out = render( 
+$out = render(
     "<tmpl_var name='somevar'>",
     testobj => testclass->new(),
-    somevar => 'somevalue'
+    somevar => 'somevalue6'
 );
-is( $out, 'somevalue' );
+is( $out, 'somevalue6' );
 
 package testclass;
 
